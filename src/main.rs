@@ -3,6 +3,7 @@ use chrono::TimeDelta;
 // use serde::{Deserialize, Serialize};
 // use std::collections::HashMap;
 use std::env;
+use std::io;
 use tabled::{
     builder::Builder,
     settings::{object::Rows, Alignment, Modify, Style},
@@ -37,31 +38,48 @@ fn days_in_current_week() -> Vec<String> {
     timedeltas.collect::<Vec<_>>()
 }
 
-fn parse_came(args: &Vec<String>) -> Option<&String> {
+fn parse_came(args: &Vec<String>) -> Result<Option<String>, String> {
     match args.iter().position(|s| s == "came") {
-        None => None,
-        Some(index) => match &args.get(index + 1) {
-            Some(value) => Some(value.to_owned()),
-            None => None,
+        None => Ok(None),
+        Some(index) => match args.get(index + 1) {
+            Some(value) => Ok(Some(value.to_string())),
+            None => Err("no argument after 'came'".to_string()),
         },
     }
 }
 
 fn parse_args(args: &Vec<String>) -> ParsedDay {
-    let start: Option<NaiveDateTime> = match parse_came(args) {
-        Some(text) => match NaiveDateTime::parse_from_str(text, "%H:%M") {
-            Ok(value) => Some(value),
-            Err(_) => None,
+    let start = match parse_came(args) {
+        // Ok(option) => match option {
+        //     Some(text) => match NaiveDateTime::parse_from_str(&text, "%H:%M") {
+        //         Err(_) => None,
+        //         Ok(value) => value,
+        // },
+        Ok(option) => match option {
+            None => None,
+            Some(text) => {
+                println!("{text}");
+                match NaiveDateTime::parse_from_str(&text, "%H:%M") {
+                    Ok(dt) => Some(dt),
+                    Err(e) => {
+                        return ParsedDay::ParseError(
+                            format!("Could not parse date string {}. Error: {}", text, e)
+                                .to_string(),
+                        )
+                    }
+                }
+            }
         },
-        None => None,
+        Err(error) => return ParsedDay::ParseError(error),
     };
+
     match start {
         Some(start) => ParsedDay::Day(Day {
             start: Some(start),
             stop: None,
             lunch: None,
         }),
-        None => ParsedDay::ParseError("something went wrong".to_string()),
+        None => ParsedDay::ParseError("start is None".to_string()),
     }
 }
 
