@@ -200,16 +200,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rust_tutorial"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "serde",
- "serde_json",
- "tabled",
-]
-
-[[package]]
 name = "rustc-serialize"
 version = "0.3.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -296,6 +286,16 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "timereport"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "serde",
+ "serde_json",
+ "tabled",
 ]
 
 [[package]]
