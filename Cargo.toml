@@ -1,7 +1,7 @@
 [package]
 name = "timereport"
 version = "0.1.0"
-edition = "2021"
+edition = "2018"
 description = "A small command-line utility for reporting working time and displaying it in different formats."
 license = "MIT"
 repository = "https://github.com/Godsmith/timereport"
