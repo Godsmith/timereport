@@ -9,6 +9,7 @@ use tabled::builder::Builder;
 
 #[derive(Deserialize)]
 struct Day {
+    date: NaiveDate,
     start: Option<NaiveDateTime>,
     stop: Option<NaiveDateTime>,
     #[serde(deserialize_with = "deserialize_timedelta")]
@@ -42,14 +43,14 @@ enum ParsedDay {
     ParseError(String),
 }
 
-fn days_in_current_week() -> Vec<NaiveDate> {
-    let offset = Local::now().weekday().num_days_from_monday();
+fn days_in_week_of(date: NaiveDate, show_weekend: bool) -> Vec<NaiveDate> {
+    let offset = date.weekday().num_days_from_monday();
     let timedelta_to_last_monday = TimeDelta::try_days(-i64::from(offset)).unwrap();
-    let date_of_last_monday = Local::now() + timedelta_to_last_monday;
-    let timedeltas = (0..=4)
+    let date_of_last_monday = date + timedelta_to_last_monday;
+    let day_count = if show_weekend { 7 } else { 5 };
+    let timedeltas = (0..=(day_count - 1))
         .map(|i| TimeDelta::try_days(i).unwrap())
-        .map(|d| date_of_last_monday + d)
-        .map(|datetime| datetime.date_naive());
+        .map(|d| date_of_last_monday + d);
     timedeltas.collect::<Vec<_>>()
 }
 
@@ -61,6 +62,11 @@ fn parse_came(args: &Vec<String>) -> Result<Option<String>, String> {
             None => Err("no argument after 'came'".to_string()),
         },
     }
+}
+
+fn parse_date(args: &Vec<String>) -> Option<NaiveDate> {
+    args.iter()
+        .find_map(|s| NaiveDate::parse_from_str(s, "%Y-%m-%d").ok())
 }
 
 fn parse_time(text: &str) -> Result<NaiveDateTime, String> {
@@ -85,8 +91,15 @@ fn parse_args(args: &Vec<String>) -> ParsedDay {
         Err(error) => return ParsedDay::ParseError(error),
     };
 
+    let date = parse_date(args);
+    let date = match date {
+        None => Local::now().date_naive(),
+        Some(date) => date,
+    };
+
     match start {
         Some(start) => ParsedDay::Day(Day {
+            date: date,
             start: Some(start),
             stop: None,
             lunch: None,
@@ -95,9 +108,9 @@ fn parse_args(args: &Vec<String>) -> ParsedDay {
     }
 }
 
-fn print_current_week(days: HashMap<NaiveDate, Day>) -> String {
+fn print_week(date: NaiveDate, days: HashMap<NaiveDate, Day>, show_weekend: bool) -> String {
     let mut builder = Builder::default();
-    let week_days = days_in_current_week();
+    let week_days = days_in_week_of(date, show_weekend);
     let mut top_row: Vec<String> = week_days
         .iter()
         .map(|date| date.format("%Y-%m-%d").to_string())
@@ -132,13 +145,13 @@ fn load_days(path: &str) -> HashMap<NaiveDate, Day> {
 pub fn main(args: Vec<String>) -> String {
     let mut days = load_days("days.json");
     let parsed_day = parse_args(&args);
-    let local_datetime = Local::now();
-    let naive_date = local_datetime.date_naive();
+    let show_weekend = args.iter().any(|arg| arg == "--weekend");
     match parsed_day {
         ParsedDay::ParseError(description) => description,
         ParsedDay::Day(day) => {
-            days.insert(naive_date, day);
-            print_current_week(days)
+            let date = day.date;
+            days.insert(date, day);
+            print_week(date, days, show_weekend)
         }
     }
 }
