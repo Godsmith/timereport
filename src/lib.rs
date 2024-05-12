@@ -54,7 +54,7 @@ fn days_in_week_of(date: NaiveDate, show_weekend: bool) -> Vec<NaiveDate> {
     timedeltas.collect::<Vec<_>>()
 }
 
-fn parse_timestamp_after(part: &str, args: &Vec<String>) -> Result<Option<String>, String> {
+fn find_arg_after(part: &str, args: &Vec<String>) -> Result<Option<String>, String> {
     match args.iter().position(|s| s == part) {
         None => Ok(None),
         Some(index) => match args.get(index + 1) {
@@ -64,12 +64,12 @@ fn parse_timestamp_after(part: &str, args: &Vec<String>) -> Result<Option<String
     }
 }
 
-fn parse_date(args: &Vec<String>) -> Option<NaiveDate> {
+fn find_date(args: &Vec<String>) -> Option<NaiveDate> {
     args.iter()
         .find_map(|s| NaiveDate::parse_from_str(s, "%Y-%m-%d").ok())
 }
 
-fn parse_time(text: &str) -> Result<NaiveDateTime, String> {
+fn parse_date(text: &str) -> Result<NaiveDateTime, String> {
     let today = Local::now();
     let today_string = today.format("%Y-%m-%d").to_string();
     let time_string = format!("{} {}", today_string, text);
@@ -80,10 +80,10 @@ fn parse_time(text: &str) -> Result<NaiveDateTime, String> {
 }
 
 fn parse_args(args: &Vec<String>) -> ParsedDay {
-    let start = match parse_timestamp_after("start", args) {
+    let start = match find_arg_after("start", args) {
         Ok(option) => match option {
             None => None,
-            Some(text) => match parse_time(&text) {
+            Some(text) => match parse_date(&text) {
                 Ok(dt) => Some(dt),
                 Err(e) => return ParsedDay::ParseError(e),
             },
@@ -91,10 +91,10 @@ fn parse_args(args: &Vec<String>) -> ParsedDay {
         Err(error) => return ParsedDay::ParseError(error),
     };
 
-    let stop = match parse_timestamp_after("stop", args) {
+    let stop = match find_arg_after("stop", args) {
         Ok(option) => match option {
             None => None,
-            Some(text) => match parse_time(&text) {
+            Some(text) => match parse_date(&text) {
                 Ok(dt) => Some(dt),
                 Err(e) => return ParsedDay::ParseError(e),
             },
@@ -102,7 +102,7 @@ fn parse_args(args: &Vec<String>) -> ParsedDay {
         Err(error) => return ParsedDay::ParseError(error),
     };
 
-    let date = parse_date(args);
+    let date = find_date(args);
     let date = match date {
         None => Local::now().date_naive(),
         Some(date) => date,
