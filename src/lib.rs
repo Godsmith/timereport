@@ -54,12 +54,12 @@ fn days_in_week_of(date: NaiveDate, show_weekend: bool) -> Vec<NaiveDate> {
     timedeltas.collect::<Vec<_>>()
 }
 
-fn parse_start(args: &Vec<String>) -> Result<Option<String>, String> {
-    match args.iter().position(|s| s == &"start") {
+fn parse_timestamp_after(part: &str, args: &Vec<String>) -> Result<Option<String>, String> {
+    match args.iter().position(|s| s == part) {
         None => Ok(None),
         Some(index) => match args.get(index + 1) {
             Some(value) => Ok(Some(value.to_string())),
-            None => Err("no argument after 'start'".to_string()),
+            None => Err(format!("no argument after '{}'", part)),
         },
     }
 }
@@ -80,7 +80,18 @@ fn parse_time(text: &str) -> Result<NaiveDateTime, String> {
 }
 
 fn parse_args(args: &Vec<String>) -> ParsedDay {
-    let start = match parse_start(args) {
+    let start = match parse_timestamp_after("start", args) {
+        Ok(option) => match option {
+            None => None,
+            Some(text) => match parse_time(&text) {
+                Ok(dt) => Some(dt),
+                Err(e) => return ParsedDay::ParseError(e),
+            },
+        },
+        Err(error) => return ParsedDay::ParseError(error),
+    };
+
+    let stop = match parse_timestamp_after("stop", args) {
         Ok(option) => match option {
             None => None,
             Some(text) => match parse_time(&text) {
@@ -97,15 +108,12 @@ fn parse_args(args: &Vec<String>) -> ParsedDay {
         Some(date) => date,
     };
 
-    match start {
-        Some(start) => ParsedDay::Day(Day {
-            date: date,
-            start: Some(start),
-            stop: None,
-            lunch: None,
-        }),
-        None => ParsedDay::ParseError("start is None".to_string()),
-    }
+    ParsedDay::Day(Day {
+        date: date,
+        start: start,
+        stop: stop,
+        lunch: None,
+    })
 }
 
 fn print_week(date: NaiveDate, days: HashMap<NaiveDate, Day>, show_weekend: bool) -> String {
@@ -128,9 +136,26 @@ fn print_week(date: NaiveDate, days: HashMap<NaiveDate, Day>, show_weekend: bool
             },
         })
         .collect();
+
+    let stops: Vec<String> = week_days
+        .iter()
+        .map(|date| match days.get(date) {
+            None => "".to_string(),
+            Some(day) => match day.stop {
+                None => "".to_string(),
+                Some(dt) => dt.format("%H:%M").to_string(),
+            },
+        })
+        .collect();
+
     let mut start_row = vec!["start".to_string()];
     start_row.extend(starts);
     builder.push_record(start_row);
+
+    let mut stop_row = vec!["stop".to_string()];
+    stop_row.extend(stops);
+    builder.push_record(stop_row);
+
     builder.build().to_string()
 }
 
