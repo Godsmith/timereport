@@ -3,6 +3,7 @@ use chrono::TimeDelta;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::HashMap;
 // use std::collections::HashMap;
+use regex::Regex;
 use std::fs::File;
 use std::io::Read;
 use tabled::builder::Builder;
@@ -79,6 +80,30 @@ fn parse_date(text: &str) -> Result<NaiveDateTime, String> {
     }
 }
 
+fn parse_timedelta(text: &str) -> Result<TimeDelta, String> {
+    let re = Regex::new(r"(\d+):?(\d*)").unwrap();
+    let (hours, minutes) = match re.captures(text) {
+        None => return Err(format!("Could not parse timedelta string {}.", text)),
+        Some(captures) => {
+            let (_, b): (&str, [&str; 2]) = captures.extract();
+            (b[0], b[1])
+        }
+    };
+    let mut seconds = 0;
+    match hours.parse::<i64>() {
+        Err(_) => return Err(format!("Could not parse timedelta string {}.", text)),
+        Ok(hours) => seconds += hours * 3600,
+    }
+    match minutes.parse::<i64>() {
+        Err(_) => return Err(format!("Could not parse timedelta string {}.", text)),
+        Ok(minutes) => seconds += minutes * 60,
+    }
+    match TimeDelta::new(seconds, 0) {
+        Some(timedelta) => Ok(timedelta),
+        None => return Err(format!("Could not parse timedelta string {}.", text)),
+    }
+}
+
 fn parse_args(args: &Vec<String>) -> ParsedDay {
     let start = match find_arg_after("start", args) {
         Ok(option) => match option {
@@ -102,6 +127,17 @@ fn parse_args(args: &Vec<String>) -> ParsedDay {
         Err(error) => return ParsedDay::ParseError(error),
     };
 
+    let lunch = match find_arg_after("lunch", args) {
+        Ok(option) => match option {
+            None => None,
+            Some(text) => match parse_timedelta(&text) {
+                Ok(dt) => Some(dt),
+                Err(e) => return ParsedDay::ParseError(e),
+            },
+        },
+        Err(error) => return ParsedDay::ParseError(error),
+    };
+
     let date = find_date(args);
     let date = match date {
         None => Local::now().date_naive(),
@@ -112,7 +148,7 @@ fn parse_args(args: &Vec<String>) -> ParsedDay {
         date: date,
         start: start,
         stop: stop,
-        lunch: None,
+        lunch: lunch,
     })
 }
 
@@ -148,6 +184,22 @@ fn print_week(date: NaiveDate, days: HashMap<NaiveDate, Day>, show_weekend: bool
         })
         .collect();
 
+    let lunches: Vec<String> = week_days
+        .iter()
+        .map(|date| match days.get(date) {
+            None => "".to_string(),
+            Some(day) => match day.lunch {
+                None => "".to_string(),
+                Some(timedelta) => format!(
+                    "{}:{}",
+                    timedelta.num_hours(),
+                    timedelta.num_minutes() - timedelta.num_hours() * 60
+                )
+                .to_string(),
+            },
+        })
+        .collect();
+
     let mut start_row = vec!["start".to_string()];
     start_row.extend(starts);
     builder.push_record(start_row);
@@ -155,6 +207,10 @@ fn print_week(date: NaiveDate, days: HashMap<NaiveDate, Day>, show_weekend: bool
     let mut stop_row = vec!["stop".to_string()];
     stop_row.extend(stops);
     builder.push_record(stop_row);
+
+    let mut lunch_row = vec!["lunch".to_string()];
+    lunch_row.extend(lunches);
+    builder.push_record(lunch_row);
 
     builder.build().to_string()
 }

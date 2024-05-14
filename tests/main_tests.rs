@@ -49,3 +49,13 @@ fn start_8_30_weekend_prints_current_date_and_8_30() {
     assert!(output.contains(&today));
     assert!(output.contains("08:30"));
 }
+
+#[test]
+fn lunch() {
+    let today = Local::now().format("%Y-%m-%d").to_string();
+
+    let output = run("lunch 1:75 --weekend");
+
+    assert!(output.contains(&today));
+    assert!(output.contains("2:15"));
+}
