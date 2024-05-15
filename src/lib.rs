@@ -152,7 +152,7 @@ fn parse_args(args: &Vec<String>) -> ParsedDay {
     })
 }
 
-fn print_week(date: NaiveDate, days: HashMap<NaiveDate, Day>, show_weekend: bool) -> String {
+fn create_week_table(date: NaiveDate, days: HashMap<NaiveDate, Day>, show_weekend: bool) -> String {
     let mut builder = Builder::default();
     let week_days = days_in_week_of(date, show_weekend);
     let mut top_row: Vec<String> = week_days
@@ -232,7 +232,7 @@ pub fn main(args: Vec<String>) -> String {
         ParsedDay::Day(day) => {
             let date = day.date;
             days.insert(date, day);
-            print_week(date, days, show_weekend)
+            create_week_table(date, days, show_weekend)
         }
     }
 }
