@@ -2,11 +2,25 @@ use crate::traits::Parsable;
 use chrono::TimeDelta;
 use regex::Regex;
 
+// fn hours_and_minutes_strings(text: &str) -> Result<(String, String), String> {
+
+// }
+
 impl Parsable for TimeDelta {
     fn from_str(text: &str) -> Result<Self, String> {
-        let re = Regex::new(r"(\d+):?(\d*)").unwrap();
+        let re = Regex::new(r"(\d+):?(\d\d)").unwrap();
         let (hours, minutes) = match re.captures(text) {
-            None => return Err(format!("Could not parse timedelta string {}.", text)),
+            None => {
+                let re2 = Regex::new(r"(\d+)m").unwrap();
+                let minutes = match re2.captures(text) {
+                    None => return Err(format!("Could not parse timedelta string '{}'.", text)),
+                    Some(captures) => {
+                        let (_, b): (&str, [&str; 1]) = captures.extract();
+                        b[0]
+                    }
+                };
+                ("0", minutes)
+            }
             Some(captures) => {
                 let (_, b): (&str, [&str; 2]) = captures.extract();
                 (b[0], b[1])
