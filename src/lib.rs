@@ -3,10 +3,11 @@ use chrono::TimeDelta;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::HashMap;
 // use std::collections::HashMap;
-use regex::Regex;
 use std::fs::File;
 use std::io::Read;
 use tabled::builder::Builder;
+mod timedelta;
+use timedelta::Parsable;
 
 #[derive(Deserialize)]
 struct Day {
@@ -80,30 +81,6 @@ fn parse_date(text: &str) -> Result<NaiveDateTime, String> {
     }
 }
 
-fn parse_timedelta(text: &str) -> Result<TimeDelta, String> {
-    let re = Regex::new(r"(\d+):?(\d*)").unwrap();
-    let (hours, minutes) = match re.captures(text) {
-        None => return Err(format!("Could not parse timedelta string {}.", text)),
-        Some(captures) => {
-            let (_, b): (&str, [&str; 2]) = captures.extract();
-            (b[0], b[1])
-        }
-    };
-    let mut seconds = 0;
-    match hours.parse::<i64>() {
-        Err(_) => return Err(format!("Could not parse timedelta string {}.", text)),
-        Ok(hours) => seconds += hours * 3600,
-    }
-    match minutes.parse::<i64>() {
-        Err(_) => return Err(format!("Could not parse timedelta string {}.", text)),
-        Ok(minutes) => seconds += minutes * 60,
-    }
-    match TimeDelta::new(seconds, 0) {
-        Some(timedelta) => Ok(timedelta),
-        None => return Err(format!("Could not parse timedelta string {}.", text)),
-    }
-}
-
 fn parse_args(args: &Vec<String>) -> ParsedDay {
     let start = match find_arg_after("start", args) {
         Ok(option) => match option {
@@ -130,7 +107,7 @@ fn parse_args(args: &Vec<String>) -> ParsedDay {
     let lunch = match find_arg_after("lunch", args) {
         Ok(option) => match option {
             None => None,
-            Some(text) => match parse_timedelta(&text) {
+            Some(text) => match TimeDelta::from_str(&text) {
                 Ok(dt) => Some(dt),
                 Err(e) => return ParsedDay::ParseError(e),
             },
