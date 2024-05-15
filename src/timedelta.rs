@@ -2,42 +2,27 @@ use crate::traits::Parsable;
 use chrono::TimeDelta;
 use regex::Regex;
 
-// fn hours_and_minutes_strings(text: &str) -> Result<(String, String), String> {
-
-// }
+fn to_hours_and_minutes(text: &str) -> Result<(&str, &str), String> {
+    let re = Regex::new(r"(\d+):?(\d\d)").unwrap();
+    if let Some(captures) = re.captures(text) {
+        let (_, groups): (&str, [&str; 2]) = captures.extract();
+        return Ok((groups[0], groups[1]));
+    }
+    let re2 = Regex::new(r"(\d+)m").unwrap();
+    if let Some(captures) = re2.captures(text) {
+        let (_, groups): (&str, [&str; 1]) = captures.extract();
+        return Ok((&"0", groups[0]));
+    }
+    return Err(format!("Could not parse timedelta string '{}'.", text));
+}
 
 impl Parsable for TimeDelta {
     fn from_str(text: &str) -> Result<Self, String> {
-        let re = Regex::new(r"(\d+):?(\d\d)").unwrap();
-        let (hours, minutes) = match re.captures(text) {
-            None => {
-                let re2 = Regex::new(r"(\d+)m").unwrap();
-                let minutes = match re2.captures(text) {
-                    None => return Err(format!("Could not parse timedelta string '{}'.", text)),
-                    Some(captures) => {
-                        let (_, b): (&str, [&str; 1]) = captures.extract();
-                        b[0]
-                    }
-                };
-                ("0", minutes)
-            }
-            Some(captures) => {
-                let (_, b): (&str, [&str; 2]) = captures.extract();
-                (b[0], b[1])
-            }
-        };
-        let mut seconds = 0;
-        match hours.parse::<i64>() {
-            Err(_) => return Err(format!("Could not parse timedelta string {}.", text)),
-            Ok(hours) => seconds += hours * 3600,
-        }
-        match minutes.parse::<i64>() {
-            Err(_) => return Err(format!("Could not parse timedelta string {}.", text)),
-            Ok(minutes) => seconds += minutes * 60,
-        }
-        match TimeDelta::new(seconds, 0) {
-            Some(timedelta) => Ok(timedelta),
-            None => return Err(format!("Could not parse timedelta string {}.", text)),
-        }
+        let (hours, minutes) = to_hours_and_minutes(text)?;
+        // Only panics when the minutes or hours strings are not integers, which should
+        // not happen because then they wouldn't have matched the regex
+        let seconds = hours.parse::<i64>().unwrap() * 3600 + minutes.parse::<i64>().unwrap() * 60;
+        // Only panics when out of bounds, so should be safe
+        Ok(TimeDelta::new(seconds, 0).unwrap())
     }
 }
