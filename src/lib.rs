@@ -2,12 +2,12 @@ use chrono::prelude::*;
 use chrono::TimeDelta;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::HashMap;
-// use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
 use tabled::builder::Builder;
+mod traits;
+use traits::Parsable;
 mod timedelta;
-use timedelta::Parsable;
 
 #[derive(Deserialize)]
 struct Day {

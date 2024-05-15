@@ -1,12 +1,6 @@
+use crate::traits::Parsable;
 use chrono::TimeDelta;
 use regex::Regex;
-
-pub trait Parsable
-where
-    Self: Sized,
-{
-    fn from_str(text: &str) -> Result<Self, String>;
-}
 
 impl Parsable for TimeDelta {
     fn from_str(text: &str) -> Result<Self, String> {
