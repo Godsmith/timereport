@@ -11,6 +11,7 @@ repository = "https://github.com/Godsmith/timereport"
 [dependencies]
 chrono = {version = "0.4.35", features = ["serde", "rustc-serialize"]}
 regex = "1.10.4"
+rstest = "0.19.0"
 serde = {version = "1.0.197", features = ["derive"]}
 serde_json = "1.0.114"
 tabled = "0.15.0"
