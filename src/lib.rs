@@ -1,20 +1,24 @@
 use chrono::prelude::*;
 use chrono::TimeDelta;
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::HashMap;
+use std::fs;
 use std::fs::File;
 use std::io::Read;
+use std::io::Write;
+use std::path::Path;
 use tabled::builder::Builder;
 mod traits;
 use traits::Parsable;
 mod timedelta;
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 struct Day {
     date: NaiveDate,
     start: Option<NaiveDateTime>,
     stop: Option<NaiveDateTime>,
     #[serde(deserialize_with = "deserialize_timedelta")]
+    #[serde(serialize_with = "serialize_timedelta")]
     lunch: Option<TimeDelta>,
 }
 
@@ -22,6 +26,19 @@ struct SerializableDay {
     start: Option<String>,
     stop: Option<String>,
     lunch: Option<String>,
+}
+fn serialize_timedelta<S>(timedelta: &Option<TimeDelta>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    // Check if the option is Some
+    if let Some(timedelta) = timedelta {
+        // Serialize the total number of seconds in the timedelta
+        serializer.serialize_i64(timedelta.num_seconds())
+    } else {
+        // If the option is None, serialize it as None
+        serializer.serialize_none()
+    }
 }
 fn deserialize_timedelta<'de, D>(deserializer: D) -> Result<Option<TimeDelta>, D::Error>
 where
@@ -192,16 +209,36 @@ fn create_week_table(date: NaiveDate, days: HashMap<NaiveDate, Day>, show_weeken
     builder.build().to_string()
 }
 
-fn load_days(path: &str) -> HashMap<NaiveDate, Day> {
+fn create_empty_json_file(path: &Path) {
+    let mut file =
+        fs::File::create(path).expect(&format!("Failed to create file {}", path.to_string_lossy()));
+    file.write_all(b"{}").expect(&format!(
+        "Could not write to file {}",
+        path.to_str().unwrap()
+    ));
+}
+
+fn load_days(path: &Path) -> HashMap<NaiveDate, Day> {
+    if fs::metadata(path).is_err() {
+        create_empty_json_file(path);
+    }
     let mut file = File::open(path).expect("Failed to open days.json");
     let mut contents = String::new();
     file.read_to_string(&mut contents)
-        .expect(&format!("Failed to read {}", path));
+        .expect(&format!("Failed to read {}", path.to_string_lossy()));
     serde_json::from_str(&contents).expect("Failed to parse JSON")
 }
 
-pub fn main(args: Vec<String>) -> String {
-    let mut days = load_days("days.json");
+fn save_days(days: &HashMap<NaiveDate, Day>, path: &Path) {
+    let json_string = serde_json::to_string_pretty(&days).unwrap();
+    match fs::write(path, json_string) {
+        Ok(_) => {}
+        Err(_) => eprintln!("Error writing to file {}", path.to_string_lossy()),
+    }
+}
+
+pub fn main(args: Vec<String>, path: &Path) -> String {
+    let mut days = load_days(path);
     let parsed_day = parse_args(&args);
     let show_weekend = args.iter().any(|arg| arg == "--weekend");
     match parsed_day {
@@ -209,6 +246,7 @@ pub fn main(args: Vec<String>) -> String {
         ParsedDay::Day(day) => {
             let date = day.date;
             days.insert(date, day);
+            save_days(&days, path);
             create_week_table(date, days, show_weekend)
         }
     }

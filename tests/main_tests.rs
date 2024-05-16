@@ -1,8 +1,14 @@
 use chrono::Local;
+use tempfile::tempdir;
 use timereport::main;
 
 fn run(s: &str) -> String {
-    main(s.split_whitespace().map(|s| s.to_string()).collect())
+    let dir = tempdir().expect("Could not create tempdir");
+    let file_path = dir.path().join("timereport.json");
+    main(
+        s.split_whitespace().map(|s| s.to_string()).collect(),
+        file_path.as_path(),
+    )
 }
 
 #[test]
