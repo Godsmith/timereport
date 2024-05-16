@@ -44,7 +44,8 @@ fn deserialize_timedelta<'de, D>(deserializer: D) -> Result<Option<TimeDelta>, D
 where
     D: Deserializer<'de>,
 {
-    let seconds = i64::deserialize(deserializer)?;
+    let opt = Option::deserialize(deserializer)?;
+    let seconds = opt.unwrap_or_default();
     Ok(Some(TimeDelta::seconds(seconds)))
 }
 
