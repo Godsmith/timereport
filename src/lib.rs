@@ -44,9 +44,9 @@ fn deserialize_timedelta<'de, D>(deserializer: D) -> Result<Option<TimeDelta>, D
 where
     D: Deserializer<'de>,
 {
-    let opt = Option::deserialize(deserializer)?;
-    let seconds = opt.unwrap_or_default();
-    Ok(Some(TimeDelta::seconds(seconds)))
+    let int_or_none = Option::deserialize(deserializer)?;
+    let timedelta_or_none = int_or_none.map(|seconds| TimeDelta::try_seconds(seconds).unwrap());
+    Ok(timedelta_or_none)
 }
 
 impl Day {
