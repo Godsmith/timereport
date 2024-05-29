@@ -50,10 +50,16 @@ where
 }
 
 impl Day {
-    fn start_string(&self) -> String {
-        match self.start {
-            Some(time) => time.format("%H:%M").to_string(),
-            None => String::new(),
+    /// Combines two Days into a third.
+    ///
+    /// The "other" variable overwrites the first.
+    fn combine(&self, other: Day) -> Day {
+        assert!(self.date == other.date);
+        Day {
+            date: self.date,
+            start: other.start.or(self.start),
+            stop: other.stop.or(self.stop),
+            lunch: other.lunch.or(self.lunch),
         }
     }
 }
@@ -246,7 +252,10 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
         ParsedDay::ParseError(description) => description,
         ParsedDay::Day(day) => {
             let date = day.date;
-            days.insert(date, day);
+            match days.get(&date) {
+                None => days.insert(date, day),
+                Some(old_day) => days.insert(date, old_day.combine(day)),
+            };
             save_days(&days, path);
             create_week_table(date, days, show_weekend)
         }
