@@ -11,6 +11,7 @@ use tabled::builder::Builder;
 mod traits;
 use traits::Parsable;
 mod timedelta;
+use tabled::tables::
 
 #[derive(Serialize, Deserialize)]
 struct Day {
@@ -21,7 +22,7 @@ struct Day {
     #[serde(serialize_with = "serialize_timedelta")]
     lunch: Option<TimeDelta>,
 }
-
+                                                                      
 struct SerializableDay {
     start: Option<String>,
     stop: Option<String>,
@@ -95,13 +96,13 @@ fn find_date(args: &Vec<String>) -> Option<NaiveDate> {
         .find_map(|s| NaiveDate::parse_from_str(s, "%Y-%m-%d").ok())
 }
 
-fn parse_date(text: &str) -> Result<NaiveDateTime, String> {
+pub fn parse_date(text: &str) -> Result<NaiveDateTime, String> {
     let today = Local::now();
     let today_string = today.format("%Y-%m-%d").to_string();
     let time_string = format!("{} {}", today_string, text);
     match NaiveDateTime::parse_from_str(&time_string, "%Y-%m-%d %H:%M") {
         Ok(dt) => Ok(dt),
-        Err(e) => Err(format!("Could not parse date string {}. Error: {}", text, e).to_string()),
+        Err(e) => Err(format!("Could not parse date string '{}'. Error: '{}'", text, e).to_string()),
     }
 }
 
