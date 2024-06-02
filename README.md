@@ -34,3 +34,17 @@ $ t start 08:30 2024-04-26
 | stop  |            |            |            |            |            |
 +-------+------------+------------+------------+------------+------------+
 ```
+
+## Development
+
+### Running tests
+
+```
+cargo test
+```
+
+### Checking coverage
+
+```
+cargo llvm-cov [--html]
+```
