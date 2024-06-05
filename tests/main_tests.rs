@@ -95,3 +95,19 @@ fn lunch_MMm(temp_dir: TempDir) {
     assert!(output.contains(&today));
     assert!(output.contains("0:15"));
 }
+
+#[rstest]
+fn show_week(temp_dir: TempDir) {
+    let output = run("show week --weekend", &temp_dir);
+
+    let today = Local::now().format("%Y-%m-%d").to_string();
+    assert!(output.contains(&today));
+}
+
+#[rstest]
+fn show_unknown(temp_dir: TempDir) {
+    let output = run("show foo", &temp_dir);
+
+    assert!(output.contains("Unknown show command"));
+    assert!(output.contains("foo"));
+}

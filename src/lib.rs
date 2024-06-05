@@ -18,6 +18,13 @@ enum ParsedDay {
     ParseError(String),
 }
 
+/// Returns the string after a string `part` in a vector.
+///
+/// - Returns Ok(string) if everything goes well
+/// - Returns Ok(None) if the vector does not contain `part`.
+/// - Returns Err(message) if the vector contains `part`, but it is the last
+/// string in the list.
+///
 fn find_arg_after(part: &str, args: &Vec<String>) -> Result<Option<String>, String> {
     match args.iter().position(|s| s == part) {
         None => Ok(None),
@@ -121,20 +128,54 @@ fn save_days(days: &HashMap<NaiveDate, Day>, path: &Path) {
     }
 }
 
-pub fn main(args: Vec<String>, path: &Path) -> String {
+fn parse_show_command(args: &Vec<String>) -> Result<Option<String>, String> {
+    match find_arg_after("show", &args) {
+        Ok(arg_or_none) => match arg_or_none {
+            None => {
+                println!("none returned");
+                Ok(None)
+            }
+            Some(arg) => Ok(Some(arg)),
+        },
+        Err(message) => return Err(message),
+    }
+}
+
+fn show_week_table(updated_day: Option<Day>, path: &Path, show_weekend: bool) -> String {
     let mut days = load_days(path);
-    let parsed_day = parse_args(&args);
-    let show_weekend = args.iter().any(|arg| arg == "--weekend");
-    match parsed_day {
-        ParsedDay::ParseError(description) => description,
-        ParsedDay::Day(day) => {
+    let date = match updated_day {
+        None => Local::now().date_naive(),
+        Some(day) => {
             let date = day.date;
             match days.get(&date) {
                 None => days.insert(date, day),
                 Some(old_day) => days.insert(date, old_day.combine(day)),
             };
             save_days(&days, path);
-            table::create_week_table(date, days, show_weekend)
+            date
         }
+    };
+    table::create_week_table(date, days, show_weekend)
+}
+
+pub fn main(args: Vec<String>, path: &Path) -> String {
+    let show_weekend = args.iter().any(|arg| arg == "--weekend");
+
+    let value_after_show = match parse_show_command(&args) {
+        Err(message) => return message,
+        Ok(value_after_show) => value_after_show,
+    };
+    match value_after_show.as_deref() {
+        None => {}
+        Some(value) => match value {
+            "week" => return show_week_table(None, path, show_weekend),
+            _ => return format!("Unknown show command: {}", value),
+        },
+    };
+
+    let parsed_day = parse_args(&args);
+    match parsed_day {
+        ParsedDay::ParseError(description) => description,
+        ParsedDay::Day(day) => show_week_table(Some(day), path, show_weekend),
     }
 }
