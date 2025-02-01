@@ -9,7 +9,9 @@ use std::path::Path;
 mod traits;
 use traits::Parsable;
 mod day;
-mod table;
+pub mod mockopen;
+// Rust note: need to do pub table here since it is used in the binary crate main.rs
+pub mod table;
 mod timedelta;
 use day::Day;
 
@@ -158,8 +160,18 @@ fn show_week_table(updated_day: Option<Day>, path: &Path, show_weekend: bool) ->
     table::create_week_table(date, days, show_weekend)
 }
 
+fn show_week_table_html(path: &Path, show_weekend: bool) -> String {
+    let date = Local::now().date_naive();
+    let days = load_days(path);
+    match table::create_html_week_table(date, days, show_weekend) {
+        Ok(_) => "".to_string(),
+        Err(error) => format!("Error: '{}'", error.to_string()),
+    }
+}
+
 pub fn main(args: Vec<String>, path: &Path) -> String {
     let show_weekend = args.iter().any(|arg| arg == "--weekend");
+    let show_html = args.iter().any(|arg| arg == "html");
 
     let value_after_show = match parse_show_command(&args) {
         Err(message) => return message,
@@ -168,7 +180,13 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
     match value_after_show.as_deref() {
         None => {}
         Some(value) => match value {
-            "week" => return show_week_table(None, path, show_weekend),
+            "week" => {
+                if show_html {
+                    return show_week_table_html(path, show_weekend);
+                } else {
+                    return show_week_table(None, path, show_weekend);
+                }
+            }
             _ => return format!("Unknown show command: {}", value),
         },
     };

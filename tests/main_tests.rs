@@ -2,10 +2,10 @@ use chrono::Local;
 use rstest::*;
 use tempfile::{tempdir, TempDir};
 use timereport::main;
+use timereport::mockopen::open::FILE_CONTENT;
 
 #[fixture]
 fn temp_dir() -> TempDir {
-    println!("inside&temp_dir");
     tempdir().expect("Could not create tempdir")
     //dir.path().join("timereport.json")
 }
@@ -100,6 +100,16 @@ fn show_week(temp_dir: TempDir) {
 
     let today = Local::now().format("%Y-%m-%d").to_string();
     assert!(output.contains(&today));
+}
+
+#[rstest]
+fn show_week_html_prints_table(temp_dir: TempDir) {
+    run("show week html", &temp_dir);
+    FILE_CONTENT.with(|content| {
+        let content = content.borrow();
+        assert!(content.contains("<table>"));
+        assert!(content.contains("lunch"));
+    })
 }
 
 #[rstest]

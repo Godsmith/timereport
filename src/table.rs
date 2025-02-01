@@ -1,24 +1,94 @@
 use crate::day::Day;
+#[cfg(feature = "mock-open")]
+use crate::mockopen::open;
+use build_html::Html;
 use chrono::prelude::*;
 use chrono::TimeDelta;
+#[cfg(not(feature = "mock-open"))]
+use open;
 use std::collections::HashMap;
+use std::fs;
+use std::io::Error;
+use std::thread::sleep;
+use std::time;
 use tabled::builder::Builder;
+use tabled::grid::records::vec_records::Cell;
+use tabled::grid::records::Records;
+use tempfile::tempdir;
 
 pub fn create_week_table(
     date: NaiveDate,
     days: HashMap<NaiveDate, Day>,
     show_weekend: bool,
 ) -> String {
+    create_table(date, days, show_weekend).to_string()
+}
+
+/// Currently does not delete the file automatically.
+pub fn create_html_week_table(
+    date: NaiveDate,
+    days: HashMap<NaiveDate, Day>,
+    show_weekend: bool,
+) -> Result<(), Error> {
+    let html = to_html_table(create_table(date, days, show_weekend)).to_html_string();
+    let tmp_dir = tempdir()?;
+    let path = tmp_dir.path().join("tmp.html");
+    fs::write(&path, html)?;
+    open::that(path)?;
+    // Sleep here so that the browser has time to load the file before it
+    // is deleted. Kind of hacky.
+    sleep(time::Duration::from_millis(200));
+
+    Ok(())
+}
+
+fn to_html_table(table: tabled::Table) -> build_html::Table {
+    let mut rows: Vec<Vec<&str>> = vec![];
+    for tabled_row in table.get_records().iter_rows() {
+        let mut html_row: Vec<&str> = vec![];
+        for cell in tabled_row.iter() {
+            html_row.push(cell.text())
+        }
+        rows.push(html_row)
+    }
+    build_html::Table::from(rows)
+}
+
+fn create_table(
+    date: NaiveDate,
+    days: HashMap<NaiveDate, Day>,
+    show_weekend: bool,
+) -> tabled::Table {
     let mut builder = Builder::default();
     let week_days = days_in_week_of(date, show_weekend);
+    builder.push_record(top_row(&week_days));
+
+    let mut start_row = vec!["start".to_string()];
+    start_row.extend(starts(&week_days, &days));
+    builder.push_record(start_row);
+
+    let mut stop_row = vec!["stop".to_string()];
+    stop_row.extend(stops(&week_days, &days));
+    builder.push_record(stop_row);
+
+    let mut lunch_row = vec!["lunch".to_string()];
+    lunch_row.extend(lunches(&week_days, &days));
+    builder.push_record(lunch_row);
+
+    builder.build()
+}
+
+fn top_row(week_days: &Vec<NaiveDate>) -> Vec<String> {
     let mut top_row: Vec<String> = week_days
         .iter()
         .map(|date| date.format("%Y-%m-%d").to_string())
         .collect();
     top_row.insert(0, "".to_string());
-    builder.push_record(top_row);
+    top_row
+}
 
-    let starts: Vec<String> = week_days
+fn starts(week_days: &Vec<NaiveDate>, days: &HashMap<NaiveDate, Day>) -> Vec<String> {
+    week_days
         .iter()
         .map(|date| match days.get(date) {
             None => "".to_string(),
@@ -27,9 +97,11 @@ pub fn create_week_table(
                 Some(dt) => dt.format("%H:%M").to_string(),
             },
         })
-        .collect();
+        .collect()
+}
 
-    let stops: Vec<String> = week_days
+fn stops(week_days: &Vec<NaiveDate>, days: &HashMap<NaiveDate, Day>) -> Vec<String> {
+    week_days
         .iter()
         .map(|date| match days.get(date) {
             None => "".to_string(),
@@ -38,9 +110,11 @@ pub fn create_week_table(
                 Some(dt) => dt.format("%H:%M").to_string(),
             },
         })
-        .collect();
+        .collect()
+}
 
-    let lunches: Vec<String> = week_days
+fn lunches(week_days: &Vec<NaiveDate>, days: &HashMap<NaiveDate, Day>) -> Vec<String> {
+    week_days
         .iter()
         .map(|date| match days.get(date) {
             None => "".to_string(),
@@ -54,21 +128,7 @@ pub fn create_week_table(
                 .to_string(),
             },
         })
-        .collect();
-
-    let mut start_row = vec!["start".to_string()];
-    start_row.extend(starts);
-    builder.push_record(start_row);
-
-    let mut stop_row = vec!["stop".to_string()];
-    stop_row.extend(stops);
-    builder.push_record(stop_row);
-
-    let mut lunch_row = vec!["lunch".to_string()];
-    lunch_row.extend(lunches);
-    builder.push_record(lunch_row);
-
-    builder.build().to_string()
+        .collect()
 }
 
 fn days_in_week_of(date: NaiveDate, show_weekend: bool) -> Vec<NaiveDate> {
