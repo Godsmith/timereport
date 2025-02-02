@@ -33,23 +33,6 @@ impl Debug for ParsedDay {
     }
 }
 
-/// Returns the string after a string `part` in a vector.
-///
-/// - Returns Ok(string) if everything goes well
-/// - Returns Ok(None) if the vector does not contain `part`.
-/// - Returns Err(message) if the vector contains `part`, but it is the last
-/// string in the list.
-///
-fn find_arg_after(part: &str, args: &Vec<String>) -> Result<Option<String>, String> {
-    match args.iter().position(|s| s == part) {
-        None => Ok(None),
-        Some(index) => match args.get(index + 1) {
-            Some(value) => Ok(Some(value.to_string())),
-            None => Err(format!("no argument after '{}'", part)),
-        },
-    }
-}
-
 fn find_date(args: &Vec<String>) -> Option<NaiveDate> {
     args.iter()
         .find_map(|s| NaiveDate::parse_from_str(s, "%Y-%m-%d").ok())
@@ -67,52 +50,59 @@ pub fn parse_date(text: &str) -> Result<NaiveDateTime, String> {
     }
 }
 
-fn parse_args(args: &Vec<String>) -> ParsedDay {
-    let start = match find_arg_after("start", args) {
+fn parse_args(args: Vec<String>) -> (ParsedDay, Vec<String>) {
+    let (start, args_after_start) = consume_after_target("start", args);
+    let start = match start {
         Ok(option) => match option {
             None => None,
             Some(text) => match parse_date(&text) {
                 Ok(dt) => Some(dt),
-                Err(e) => return ParsedDay::ParseError(e),
+                Err(e) => return (ParsedDay::ParseError(e), args_after_start),
             },
         },
-        Err(error) => return ParsedDay::ParseError(error),
+        Err(error) => return (ParsedDay::ParseError(error), args_after_start),
     };
 
-    let stop = match find_arg_after("stop", args) {
+    let (stop, args_after_stop) = consume_after_target("stop", args_after_start);
+    let stop = match stop {
         Ok(option) => match option {
             None => None,
             Some(text) => match parse_date(&text) {
                 Ok(dt) => Some(dt),
-                Err(e) => return ParsedDay::ParseError(e),
+                Err(e) => return (ParsedDay::ParseError(e), args_after_stop),
             },
         },
-        Err(error) => return ParsedDay::ParseError(error),
+        Err(error) => return (ParsedDay::ParseError(error), args_after_stop),
     };
 
-    let lunch = match find_arg_after("lunch", args) {
+    let (lunch, args_after_lunch) = consume_after_target("lunch", args_after_stop);
+    let lunch = match lunch {
         Ok(option) => match option {
             None => None,
             Some(text) => match TimeDelta::from_str(&text) {
                 Ok(dt) => Some(dt),
-                Err(e) => return ParsedDay::ParseError(e),
+                Err(e) => return (ParsedDay::ParseError(e), args_after_lunch),
             },
         },
-        Err(error) => return ParsedDay::ParseError(error),
+        Err(error) => return (ParsedDay::ParseError(error), args_after_lunch),
     };
 
-    let date = find_date(args);
+    // TODO: consume here as well
+    let date = find_date(&args_after_lunch);
     let date = match date {
         None => Local::now().date_naive(),
         Some(date) => date,
     };
 
-    ParsedDay::Day(Day {
-        date: date,
-        start: start,
-        stop: stop,
-        lunch: lunch,
-    })
+    (
+        ParsedDay::Day(Day {
+            date: date,
+            start: start,
+            stop: stop,
+            lunch: lunch,
+        }),
+        args_after_lunch,
+    )
 }
 
 fn create_empty_json_file(path: &Path) {
@@ -170,10 +160,10 @@ fn show_week_table_html(path: &Path, show_weekend: bool) -> String {
 }
 
 pub fn main(args: Vec<String>, path: &Path) -> String {
-    let (show_weekend, args_after_show_weekend) = consume_bool(args, "--weekend");
-    let (show_html, args_after_show_html) = consume_bool(args_after_show_weekend, "html");
+    let (show_weekend, args_after_show_weekend) = consume_bool("--weekend", args);
+    let (show_html, args_after_show_html) = consume_bool("html", args_after_show_weekend);
     let (result_for_arg_after_show, args_after_consuming_show) =
-        consume_after_target(args_after_show_html, "show");
+        consume_after_target("show", args_after_show_html);
 
     let arg_after_show = match result_for_arg_after_show {
         Err(message) => return message,
@@ -193,7 +183,7 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
         },
     };
 
-    let parsed_day = parse_args(&args_after_consuming_show);
+    let (parsed_day, args_after_parsing_args) = parse_args(args_after_consuming_show);
     println!("{:?}", parsed_day);
     match parsed_day {
         ParsedDay::ParseError(description) => description,

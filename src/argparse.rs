@@ -1,4 +1,4 @@
-pub fn consume_bool(args: Vec<String>, target: &str) -> (bool, Vec<String>) {
+pub fn consume_bool(target: &str, args: Vec<String>) -> (bool, Vec<String>) {
     // Check if the target string exists in the vector
     let exists = args.iter().any(|s| s == target);
 
@@ -10,8 +10,8 @@ pub fn consume_bool(args: Vec<String>, target: &str) -> (bool, Vec<String>) {
 }
 
 pub fn consume_after_target(
-    args: Vec<String>,
     target: &str,
+    args: Vec<String>,
 ) -> (Result<Option<String>, String>, Vec<String>) {
     args.iter().position(|s| s == target).map_or_else(
         || (Ok(None), args.to_vec()),
