@@ -133,10 +133,7 @@ fn save_days(days: &HashMap<NaiveDate, Day>, path: &Path) {
 fn parse_show_command(args: &Vec<String>) -> Result<Option<String>, String> {
     match find_arg_after("show", &args) {
         Ok(arg_or_none) => match arg_or_none {
-            None => {
-                println!("none returned");
-                Ok(None)
-            }
+            None => Ok(None),
             Some(arg) => Ok(Some(arg)),
         },
         Err(message) => return Err(message),
