@@ -1,3 +1,4 @@
+use argparse::consume_bool;
 use chrono::prelude::*;
 use chrono::TimeDelta;
 use std::collections::HashMap;
@@ -9,6 +10,7 @@ use std::io::Write;
 use std::path::Path;
 mod traits;
 use traits::Parsable;
+mod argparse;
 mod day;
 pub mod mockopen;
 // Rust note: need to do pub table here since it is used in the binary crate main.rs
@@ -177,10 +179,10 @@ fn show_week_table_html(path: &Path, show_weekend: bool) -> String {
 }
 
 pub fn main(args: Vec<String>, path: &Path) -> String {
-    let show_weekend = args.iter().any(|arg| arg == "--weekend");
-    let show_html = args.iter().any(|arg| arg == "html");
+    let (show_weekend, args_after_show_weekend) = consume_bool(args, "--weekend");
+    let (show_html, args_after_show_html) = consume_bool(args_after_show_weekend, "html");
 
-    let value_after_show = match parse_show_command(&args) {
+    let value_after_show = match parse_show_command(&args_after_show_html) {
         Err(message) => return message,
         Ok(value_after_show) => value_after_show,
     };
@@ -198,7 +200,8 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
         },
     };
 
-    let parsed_day = parse_args(&args);
+    let parsed_day = parse_args(&args_after_show_html);
+    println!("{:?}", parsed_day);
     match parsed_day {
         ParsedDay::ParseError(description) => description,
         ParsedDay::Day(day) => show_week_table(Some(day), path, show_weekend),
