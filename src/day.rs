@@ -1,6 +1,7 @@
 use chrono::prelude::*;
 use chrono::TimeDelta;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::fmt::Debug;
 
 #[derive(Serialize, Deserialize)]
 pub struct Day {
@@ -10,6 +11,17 @@ pub struct Day {
     #[serde(deserialize_with = "deserialize_timedelta")]
     #[serde(serialize_with = "serialize_timedelta")]
     pub lunch: Option<TimeDelta>,
+}
+
+impl Debug for Day {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Day")
+            .field("date", &self.date)
+            .field("start", &self.start)
+            .field("stop", &self.stop)
+            .field("lunch", &self.lunch)
+            .finish()
+    }
 }
 
 impl Day {

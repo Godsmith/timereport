@@ -1,6 +1,7 @@
 use chrono::prelude::*;
 use chrono::TimeDelta;
 use std::collections::HashMap;
+use std::fmt::Debug;
 use std::fs;
 use std::fs::File;
 use std::io::Read;
@@ -18,6 +19,15 @@ use day::Day;
 enum ParsedDay {
     Day(Day),
     ParseError(String),
+}
+
+impl Debug for ParsedDay {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Day(arg0) => f.debug_tuple("Day").field(arg0).finish(),
+            Self::ParseError(arg0) => f.debug_tuple("ParseError").field(arg0).finish(),
+        }
+    }
 }
 
 /// Returns the string after a string `part` in a vector.
@@ -192,5 +202,42 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
     match parsed_day {
         ParsedDay::ParseError(description) => description,
         ParsedDay::Day(day) => show_week_table(Some(day), path, show_weekend),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rstest::rstest;
+    #[rstest]
+    fn parsed_day_debug() {
+        let day = Day {
+            date: NaiveDate::parse_from_str("2025-02-02", "%Y-%m-%d").expect(""),
+            start: Some(
+                NaiveDateTime::parse_from_str("2025-02-02 8:00", "%Y-%m-%d %H:%M").expect(""),
+            ),
+            stop: Some(
+                NaiveDateTime::parse_from_str("2025-02-02 17:00", "%Y-%m-%d %H:%M").expect(""),
+            ),
+            lunch: Some(TimeDelta::from_str("45m").expect("")),
+        };
+        let parsed_day = ParsedDay::Day(day);
+        let debug_text = format!("{:?}", parsed_day);
+        assert!(debug_text.contains("2025-02-02"));
+        assert!(debug_text.contains("8:00"));
+        assert!(debug_text.contains("17:00"));
+        assert!(debug_text.contains("2700")); // 2700 s == 45 min
+    }
+
+    #[rstest]
+    fn parse_date_error() {
+        let output = parse_date("2024-01-32");
+        assert_eq!(
+            output,
+            Result::Err(
+                "Could not parse date string '2024-01-32'. Error: 'input contains invalid characters'"
+                    .to_string()
+            )
+        );
     }
 }
