@@ -1,3 +1,4 @@
+use argparse::consume_after_target;
 use argparse::consume_bool;
 use chrono::prelude::*;
 use chrono::TimeDelta;
@@ -142,16 +143,6 @@ fn save_days(days: &HashMap<NaiveDate, Day>, path: &Path) {
     }
 }
 
-fn parse_show_command(args: &Vec<String>) -> Result<Option<String>, String> {
-    match find_arg_after("show", &args) {
-        Ok(arg_or_none) => match arg_or_none {
-            None => Ok(None),
-            Some(arg) => Ok(Some(arg)),
-        },
-        Err(message) => return Err(message),
-    }
-}
-
 fn show_week_table(updated_day: Option<Day>, path: &Path, show_weekend: bool) -> String {
     let mut days = load_days(path);
     let date = match updated_day {
@@ -181,12 +172,14 @@ fn show_week_table_html(path: &Path, show_weekend: bool) -> String {
 pub fn main(args: Vec<String>, path: &Path) -> String {
     let (show_weekend, args_after_show_weekend) = consume_bool(args, "--weekend");
     let (show_html, args_after_show_html) = consume_bool(args_after_show_weekend, "html");
+    let (result_for_arg_after_show, args_after_consuming_show) =
+        consume_after_target(args_after_show_html, "show");
 
-    let value_after_show = match parse_show_command(&args_after_show_html) {
+    let arg_after_show = match result_for_arg_after_show {
         Err(message) => return message,
         Ok(value_after_show) => value_after_show,
     };
-    match value_after_show.as_deref() {
+    match arg_after_show.as_deref() {
         None => {}
         Some(value) => match value {
             "week" => {
@@ -200,7 +193,7 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
         },
     };
 
-    let parsed_day = parse_args(&args_after_show_html);
+    let parsed_day = parse_args(&args_after_consuming_show);
     println!("{:?}", parsed_day);
     match parsed_day {
         ParsedDay::ParseError(description) => description,
