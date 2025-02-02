@@ -85,6 +85,13 @@ fn subsequent_edits_of_the_same_day(temp_dir: TempDir) {
 }
 
 #[rstest]
+fn lunch_is_correctly_parsed_from_file(temp_dir: TempDir) {
+    run("lunch 45m --weekend", &temp_dir);
+    let output = run("show week --weekend", &temp_dir);
+    assert!(output.contains("45"));
+}
+
+#[rstest]
 fn lunch_minutes_and_m(temp_dir: TempDir) {
     let today = Local::now().format("%Y-%m-%d").to_string();
 

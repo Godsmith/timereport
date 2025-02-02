@@ -9,3 +9,14 @@ fn main() {
     let output = timereport::main(args, path);
     println!("{output}");
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use rstest::rstest;
+
+    #[rstest]
+    fn call_main_function_for_code_coverage() {
+        main();
+    }
+}
