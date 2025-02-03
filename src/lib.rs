@@ -2,6 +2,7 @@ use argparse::consume_after_target;
 use argparse::consume_bool;
 use argparse::consume_date;
 use chrono::prelude::*;
+use chrono::Duration;
 use chrono::TimeDelta;
 use std::collections::HashMap;
 use std::fmt::Debug;
@@ -94,6 +95,14 @@ fn parse_args(args: Vec<String>) -> (ParsedDay, Vec<String>) {
         Some(date) => date,
     };
 
+    let (last, args_after_consume_last) = consume_bool("last", args_after_consume_date);
+
+    let date = if last {
+        date - Duration::try_weeks(1).expect("hardcoded int")
+    } else {
+        date
+    };
+
     (
         ParsedDay::Day(Day {
             date: date,
@@ -101,7 +110,7 @@ fn parse_args(args: Vec<String>) -> (ParsedDay, Vec<String>) {
             stop: stop,
             lunch: lunch,
         }),
-        args_after_consume_date,
+        args_after_consume_last,
     )
 }
 

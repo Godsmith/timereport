@@ -1,4 +1,4 @@
-use chrono::Local;
+use chrono::{Duration, Local};
 use rstest::*;
 use tempfile::{tempdir, TempDir};
 use timereport::main;
@@ -91,6 +91,16 @@ fn lunch_hours_and_minutes(temp_dir: TempDir) {
 fn report_weekday(temp_dir: TempDir) {
     let output = run("monday start 8:00", &temp_dir);
 
+    assert!(output.contains("8:00"));
+}
+
+#[rstest]
+fn report_last_weekday(temp_dir: TempDir) {
+    let one_week_ago = Local::now() - Duration::try_weeks(1).expect("hardcoded int");
+    let one_week_ago = one_week_ago.format("%Y-%m-%d").to_string();
+    let output = run("last monday start 8:00", &temp_dir);
+
+    assert!(output.contains(&one_week_ago));
     assert!(output.contains("8:00"));
 }
 
