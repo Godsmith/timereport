@@ -1,4 +1,6 @@
-use chrono::NaiveDate;
+use std::convert::TryFrom;
+
+use chrono::{Datelike, Local, NaiveDate, Weekday};
 
 pub fn consume_bool(target: &str, args: Vec<String>) -> (bool, Vec<String>) {
     // Check if the target string exists in the vector
@@ -38,16 +40,53 @@ pub fn consume_after_target(
         },
     )
 }
-
 pub fn consume_date(args: Vec<String>) -> (Option<NaiveDate>, Vec<String>) {
-    // Find first date and its index
-    let found = args.iter().enumerate().find_map(|(i, s)| {
+    // List of valid weekday names
+    let weekdays = [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+    ];
+
+    // Find first weekday name and its index
+    let found_weekday = args.iter().enumerate().find_map(|(i, s)| {
+        weekdays
+            .iter()
+            .position(|&w| w == s.to_lowercase())
+            .map(|w| (i, Weekday::try_from(w as u8).unwrap()))
+    });
+
+    if let Some((index, weekday)) = found_weekday {
+        // Calculate the date of the given weekday in the current week
+        let today = Local::now().date_naive();
+        let days_since_monday = today.weekday().num_days_from_monday();
+        let target_days_since_monday = weekday.num_days_from_monday();
+        let date = today
+            - chrono::Duration::try_days(days_since_monday as i64).expect("must be 0-6")
+            + chrono::Duration::try_days(target_days_since_monday as i64).expect("must be 0-6");
+
+        // Create new vector without the weekday string
+        let modified = args
+            .into_iter()
+            .enumerate()
+            .filter_map(|(i, s)| (i != index).then_some(s))
+            .collect();
+
+        return (Some(date), modified);
+    }
+
+    // Fall back to parsing NaiveDate if no weekday is found
+    let found_date = args.iter().enumerate().find_map(|(i, s)| {
         NaiveDate::parse_from_str(s, "%Y-%m-%d")
             .ok()
             .map(|d| (i, d))
     });
 
-    match found {
+    match found_date {
         Some((index, date)) => {
             // Create new vector without the date string
             let modified = args

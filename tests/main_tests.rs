@@ -88,6 +88,13 @@ fn lunch_hours_and_minutes(temp_dir: TempDir) {
 }
 
 #[rstest]
+fn report_weekday(temp_dir: TempDir) {
+    let output = run("monday start 8:00", &temp_dir);
+
+    assert!(output.contains("8:00"));
+}
+
+#[rstest]
 fn subsequent_edits_of_the_same_day(temp_dir: TempDir) {
     run("start 7:00 --weekend", &temp_dir);
     let output = run("stop 15:00 --weekend", &temp_dir);
