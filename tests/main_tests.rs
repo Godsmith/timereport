@@ -126,3 +126,11 @@ fn show_unknown(temp_dir: TempDir) {
     assert!(output.contains("Unknown show command"));
     assert!(output.contains("foo"));
 }
+
+#[rstest]
+fn extra_argument(temp_dir: TempDir) {
+    let output = run("foo", &temp_dir);
+
+    assert!(output.contains("Unknown or extra argument"));
+    assert!(output.contains("foo"));
+}

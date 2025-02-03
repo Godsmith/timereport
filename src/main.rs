@@ -5,7 +5,8 @@ use timereport;
 
 fn main() {
     let path = Path::new("C:\\Users\\Filip\\Dropbox\\timereport.json");
-    let args: Vec<_> = env::args().collect();
+    // Skip the first argument since it is just the file
+    let args: Vec<_> = env::args().skip(1).collect();
     let output = timereport::main(args, path);
     println!("{output}");
 }

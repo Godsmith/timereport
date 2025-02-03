@@ -1,5 +1,6 @@
 use argparse::consume_after_target;
 use argparse::consume_bool;
+use argparse::consume_date;
 use chrono::prelude::*;
 use chrono::TimeDelta;
 use std::collections::HashMap;
@@ -31,11 +32,6 @@ impl Debug for ParsedDay {
             Self::ParseError(arg0) => f.debug_tuple("ParseError").field(arg0).finish(),
         }
     }
-}
-
-fn find_date(args: &Vec<String>) -> Option<NaiveDate> {
-    args.iter()
-        .find_map(|s| NaiveDate::parse_from_str(s, "%Y-%m-%d").ok())
 }
 
 pub fn parse_date(text: &str) -> Result<NaiveDateTime, String> {
@@ -87,8 +83,7 @@ fn parse_args(args: Vec<String>) -> (ParsedDay, Vec<String>) {
         Err(error) => return (ParsedDay::ParseError(error), args_after_lunch),
     };
 
-    // TODO: consume here as well
-    let date = find_date(&args_after_lunch);
+    let (date, args_after_consume_date) = consume_date(args_after_lunch);
     let date = match date {
         None => Local::now().date_naive(),
         Some(date) => date,
@@ -101,7 +96,7 @@ fn parse_args(args: Vec<String>) -> (ParsedDay, Vec<String>) {
             stop: stop,
             lunch: lunch,
         }),
-        args_after_lunch,
+        args_after_consume_date,
     )
 }
 
@@ -184,11 +179,17 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
     };
 
     let (parsed_day, args_after_parsing_args) = parse_args(args_after_consuming_show);
-    println!("{:?}", parsed_day);
-    match parsed_day {
-        ParsedDay::ParseError(description) => description,
-        ParsedDay::Day(day) => show_week_table(Some(day), path, show_weekend),
+    let day = match parsed_day {
+        ParsedDay::ParseError(description) => return description,
+        ParsedDay::Day(day) => day,
+    };
+    if !args_after_parsing_args.is_empty() {
+        return format!(
+            "Unknown or extra argument '{}'",
+            args_after_parsing_args.join(", ")
+        );
     }
+    show_week_table(Some(day), path, show_weekend)
 }
 
 #[cfg(test)]
