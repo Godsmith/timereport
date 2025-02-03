@@ -37,8 +37,13 @@ impl Debug for ParsedDay {
 pub fn parse_date(text: &str) -> Result<NaiveDateTime, String> {
     let today = Local::now();
     let today_string = today.format("%Y-%m-%d").to_string();
-    let time_string = format!("{} {}", today_string, text);
-    match NaiveDateTime::parse_from_str(&time_string, "%Y-%m-%d %H:%M") {
+    let time_string = if text.contains(":") {
+        text.to_string()
+    } else {
+        format!("{text}:00")
+    };
+    let datetime_string = format!("{} {}", today_string, time_string);
+    match NaiveDateTime::parse_from_str(&datetime_string, "%Y-%m-%d %H:%M") {
         Ok(dt) => Ok(dt),
         Err(e) => {
             Err(format!("Could not parse date string '{}'. Error: '{}'", text, e).to_string())

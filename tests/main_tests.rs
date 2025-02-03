@@ -71,6 +71,13 @@ fn start_8_30_weekend_prints_current_date_and_8_30(temp_dir: TempDir) {
 }
 
 #[rstest]
+fn report_only_hour(temp_dir: TempDir) {
+    let output = run("start 8 --weekend", &temp_dir);
+
+    assert!(output.contains("08:00"));
+}
+
+#[rstest]
 fn lunch_hours_and_minutes(temp_dir: TempDir) {
     let today = Local::now().format("%Y-%m-%d").to_string();
 
