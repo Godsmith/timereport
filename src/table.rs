@@ -61,7 +61,8 @@ fn create_table(
 ) -> tabled::Table {
     let mut builder = Builder::default();
     let week_days = days_in_week_of(date, show_weekend);
-    builder.push_record(top_row(&week_days));
+    builder.push_record(date_row(&week_days, "%Y-%m-%d")); // date
+    builder.push_record(date_row(&week_days, "%A")); // weekday
 
     let mut start_row = vec!["start".to_string()];
     start_row.extend(starts(&week_days, &days));
@@ -78,13 +79,13 @@ fn create_table(
     builder.build()
 }
 
-fn top_row(week_days: &Vec<NaiveDate>) -> Vec<String> {
-    let mut top_row: Vec<String> = week_days
+fn date_row(week_days: &Vec<NaiveDate>, format: &str) -> Vec<String> {
+    let mut strings: Vec<String> = week_days
         .iter()
-        .map(|date| date.format("%Y-%m-%d").to_string())
+        .map(|date| date.format(format).to_string())
         .collect();
-    top_row.insert(0, "".to_string());
-    top_row
+    strings.insert(0, "".to_string());
+    strings
 }
 
 fn starts(week_days: &Vec<NaiveDate>, days: &HashMap<NaiveDate, Day>) -> Vec<String> {
