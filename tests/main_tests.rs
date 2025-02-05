@@ -162,3 +162,46 @@ fn extra_argument(temp_dir: TempDir) {
     assert!(output.contains("Unknown or extra argument"));
     assert!(output.contains("foo"));
 }
+
+#[rstest]
+fn undo(temp_dir: TempDir) {
+    let output = run("start 8", &temp_dir);
+    assert!(output.contains("8:00"));
+
+    let output = run("undo", &temp_dir);
+
+    assert!(!output.contains("8:00"));
+}
+
+#[rstest]
+fn nothing_to_undo(temp_dir: TempDir) {
+    let output = run("undo", &temp_dir);
+
+    assert!(output.contains("Nothing to undo"));
+}
+
+#[rstest]
+fn redo(temp_dir: TempDir) {
+    run("start 8", &temp_dir);
+    run("undo", &temp_dir);
+    let output = run("redo", &temp_dir);
+
+    assert!(output.contains("8:00"));
+}
+
+#[rstest]
+fn nothing_to_redo(temp_dir: TempDir) {
+    let output = run("redo", &temp_dir);
+
+    assert!(output.contains("Nothing to redo"));
+}
+
+#[rstest]
+fn adding_day_clears_undone(temp_dir: TempDir) {
+    run("start 8", &temp_dir);
+    run("undo", &temp_dir);
+    run("start 8", &temp_dir);
+    let output = run("redo", &temp_dir);
+
+    assert!(output.contains("Nothing to redo"));
+}

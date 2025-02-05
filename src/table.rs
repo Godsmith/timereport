@@ -18,19 +18,19 @@ use tempfile::tempdir;
 
 pub fn create_week_table(
     date: NaiveDate,
-    days: HashMap<NaiveDate, Day>,
+    day_from_date: HashMap<NaiveDate, Day>,
     show_weekend: bool,
 ) -> String {
-    create_table(date, days, show_weekend).to_string()
+    create_table(date, day_from_date, show_weekend).to_string()
 }
 
 /// Currently does not delete the file automatically.
 pub fn create_html_week_table(
     date: NaiveDate,
-    days: HashMap<NaiveDate, Day>,
+    day_from_date: HashMap<NaiveDate, Day>,
     show_weekend: bool,
 ) -> Result<(), Error> {
-    let html = to_html_table(create_table(date, days, show_weekend)).to_html_string();
+    let html = to_html_table(create_table(date, day_from_date, show_weekend)).to_html_string();
     let tmp_dir = tempdir()?;
     let path = tmp_dir.path().join("tmp.html");
     fs::write(&path, html)?;
@@ -55,25 +55,25 @@ fn to_html_table(table: tabled::Table) -> build_html::Table {
 }
 
 fn create_table(
-    date: NaiveDate,
-    days: HashMap<NaiveDate, Day>,
+    date_to_display: NaiveDate,
+    day_from_date: HashMap<NaiveDate, Day>,
     show_weekend: bool,
 ) -> tabled::Table {
     let mut builder = Builder::default();
-    let week_days = days_in_week_of(date, show_weekend);
+    let week_days = days_in_week_of(date_to_display, show_weekend);
     builder.push_record(date_row(&week_days, "%Y-%m-%d")); // date
     builder.push_record(date_row(&week_days, "%A")); // weekday
 
     let mut start_row = vec!["start".to_string()];
-    start_row.extend(starts(&week_days, &days));
+    start_row.extend(starts(&week_days, &day_from_date));
     builder.push_record(start_row);
 
     let mut stop_row = vec!["stop".to_string()];
-    stop_row.extend(stops(&week_days, &days));
+    stop_row.extend(stops(&week_days, &day_from_date));
     builder.push_record(stop_row);
 
     let mut lunch_row = vec!["lunch".to_string()];
-    lunch_row.extend(lunches(&week_days, &days));
+    lunch_row.extend(lunches(&week_days, &day_from_date));
     builder.push_record(lunch_row);
 
     builder.build()

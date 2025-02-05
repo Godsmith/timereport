@@ -3,7 +3,7 @@ use chrono::TimeDelta;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt::Debug;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Day {
     pub date: NaiveDate,
     pub start: Option<NaiveDateTime>,

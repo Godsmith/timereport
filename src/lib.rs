@@ -6,14 +6,11 @@ use chrono::Duration;
 use chrono::TimeDelta;
 use std::collections::HashMap;
 use std::fmt::Debug;
-use std::fs;
-use std::fs::File;
-use std::io::Read;
-use std::io::Write;
 use std::path::Path;
 mod traits;
 use traits::Parsable;
 mod argparse;
+mod config;
 mod day;
 pub mod mockopen;
 // Rust note: need to do pub table here since it is used in the binary crate main.rs
@@ -114,61 +111,57 @@ fn parse_args(args: Vec<String>) -> (ParsedDay, Vec<String>) {
     )
 }
 
-fn create_empty_json_file(path: &Path) {
-    let mut file =
-        fs::File::create(path).expect(&format!("Failed to create file {}", path.to_string_lossy()));
-    file.write_all(b"{}").expect(&format!(
-        "Could not write to file {}",
-        path.to_str().unwrap()
-    ));
+fn show_week_table(
+    day_from_date: HashMap<NaiveDate, Day>,
+    date: NaiveDate,
+    show_weekend: bool,
+) -> String {
+    table::create_week_table(date, day_from_date, show_weekend)
 }
 
-fn load_days(path: &Path) -> HashMap<NaiveDate, Day> {
-    if fs::metadata(path).is_err() {
-        create_empty_json_file(path);
-    }
-    let mut file = File::open(path).expect("Failed to open days.json");
-    let mut contents = String::new();
-    file.read_to_string(&mut contents)
-        .expect(&format!("Failed to read {}", path.to_string_lossy()));
-    serde_json::from_str(&contents).expect("Failed to parse JSON")
-}
-
-fn save_days(days: &HashMap<NaiveDate, Day>, path: &Path) {
-    let json_string = serde_json::to_string_pretty(&days).unwrap();
-    match fs::write(path, json_string) {
-        Ok(_) => {}
-        Err(_) => eprintln!("Error writing to file {}", path.to_string_lossy()),
-    }
-}
-
-fn show_week_table(updated_day: Option<Day>, path: &Path, show_weekend: bool) -> String {
-    let mut days = load_days(path);
-    let date = match updated_day {
-        None => Local::now().date_naive(),
-        Some(day) => {
-            let date = day.date;
-            match days.get(&date) {
-                None => days.insert(date, day),
-                Some(old_day) => days.insert(date, old_day.combine(day)),
-            };
-            save_days(&days, path);
-            date
-        }
-    };
-    table::create_week_table(date, days, show_weekend)
-}
-
-fn show_week_table_html(path: &Path, show_weekend: bool) -> String {
-    let date = Local::now().date_naive();
-    let days = load_days(path);
-    match table::create_html_week_table(date, days, show_weekend) {
+fn show_week_table_html(
+    day_from_date: HashMap<NaiveDate, Day>,
+    date: NaiveDate,
+    show_weekend: bool,
+) -> String {
+    match table::create_html_week_table(date, day_from_date, show_weekend) {
         Ok(_) => "".to_string(),
         Err(error) => format!("Error: '{}'", error.to_string()),
     }
 }
 
+fn undo(path: &Path) -> String {
+    let mut config = config::load_config(path);
+
+    let date = match config.undo() {
+        Ok(date) => date,
+        Err(message) => return message,
+    };
+    config::save_config(&config, path);
+    let show_weekend = matches!(date.weekday(), Weekday::Sat | Weekday::Sun);
+    show_week_table(config.day_from_date(), date, show_weekend)
+}
+
+fn redo(path: &Path) -> String {
+    let mut config = config::load_config(path);
+    let date = match config.redo() {
+        Ok(date) => date,
+        Err(message) => return message,
+    };
+    config::save_config(&config, path);
+    let show_weekend = matches!(date.weekday(), Weekday::Sat | Weekday::Sun);
+    show_week_table(config.day_from_date(), date, show_weekend)
+}
+
 pub fn main(args: Vec<String>, path: &Path) -> String {
+    let (has_undo, args) = consume_bool("undo", args);
+    if has_undo {
+        return undo(path);
+    }
+    let (has_redo, args) = consume_bool("redo", args);
+    if has_redo {
+        return redo(path);
+    }
     let (show_weekend, args_after_show_weekend) = consume_bool("--weekend", args);
     let (show_html, args_after_show_html) = consume_bool("html", args_after_show_weekend);
     let (result_for_arg_after_show, args_after_consuming_show) =
@@ -178,14 +171,16 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
         Err(message) => return message,
         Ok(value_after_show) => value_after_show,
     };
+    let mut config = config::load_config(path);
+    let today = Local::now().date_naive();
     match arg_after_show.as_deref() {
         None => {}
         Some(value) => match value {
             "week" => {
                 if show_html {
-                    return show_week_table_html(path, show_weekend);
+                    return show_week_table_html(config.day_from_date(), today, show_weekend);
                 } else {
-                    return show_week_table(None, path, show_weekend);
+                    return show_week_table(config.day_from_date(), today, show_weekend);
                 }
             }
             _ => return format!("Unknown show command: {}", value),
@@ -197,13 +192,16 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
         ParsedDay::ParseError(description) => return description,
         ParsedDay::Day(day) => day,
     };
+    let date = day.date;
+    config.add_day(day);
+    config::save_config(&config, path);
     if !args_after_parsing_args.is_empty() {
         return format!(
             "Unknown or extra argument '{}'",
             args_after_parsing_args.join(", ")
         );
     }
-    show_week_table(Some(day), path, show_weekend)
+    show_week_table(config.day_from_date(), date, show_weekend)
 }
 
 #[cfg(test)]
