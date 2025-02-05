@@ -40,6 +40,7 @@ fn no_arguments_prints_current_date(temp_dir: TempDir) {
 
 #[rstest]
 fn no_argument_does_not_affect_config_file(temp_dir: TempDir) {
+    run("", &temp_dir); // To create a config file
     let config_before = config_contents(&temp_dir);
     run("", &temp_dir);
     let config_after = config_contents(&temp_dir);

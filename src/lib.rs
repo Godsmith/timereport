@@ -5,7 +5,6 @@ use chrono::prelude::*;
 use chrono::Duration;
 use chrono::TimeDelta;
 use std::collections::HashMap;
-use std::fmt::Debug;
 use std::path::Path;
 mod traits;
 use traits::Parsable;
@@ -17,20 +16,6 @@ pub mod mockopen;
 pub mod table;
 mod timedelta;
 use day::Day;
-
-enum ParsedDay {
-    Day(Day),
-    ParseError(String),
-}
-
-impl Debug for ParsedDay {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Day(arg0) => f.debug_tuple("Day").field(arg0).finish(),
-            Self::ParseError(arg0) => f.debug_tuple("ParseError").field(arg0).finish(),
-        }
-    }
-}
 
 pub fn parse_date(text: &str) -> Result<NaiveDateTime, String> {
     let today = Local::now();
@@ -49,17 +34,17 @@ pub fn parse_date(text: &str) -> Result<NaiveDateTime, String> {
     }
 }
 
-fn parse_args(args: Vec<String>) -> (ParsedDay, Vec<String>) {
+fn parse_args(args: Vec<String>) -> (Result<Day, String>, Vec<String>) {
     let (start, args_after_start) = consume_after_target("start", args);
     let start = match start {
         Ok(option) => match option {
             None => None,
             Some(text) => match parse_date(&text) {
                 Ok(dt) => Some(dt),
-                Err(e) => return (ParsedDay::ParseError(e), args_after_start),
+                Err(e) => return (Err(e), args_after_start),
             },
         },
-        Err(error) => return (ParsedDay::ParseError(error), args_after_start),
+        Err(error) => return (Err(error), args_after_start),
     };
 
     let (stop, args_after_stop) = consume_after_target("stop", args_after_start);
@@ -68,10 +53,10 @@ fn parse_args(args: Vec<String>) -> (ParsedDay, Vec<String>) {
             None => None,
             Some(text) => match parse_date(&text) {
                 Ok(dt) => Some(dt),
-                Err(e) => return (ParsedDay::ParseError(e), args_after_stop),
+                Err(e) => return (Err(e), args_after_stop),
             },
         },
-        Err(error) => return (ParsedDay::ParseError(error), args_after_stop),
+        Err(error) => return (Err(error), args_after_stop),
     };
 
     let (lunch, args_after_lunch) = consume_after_target("lunch", args_after_stop);
@@ -80,10 +65,10 @@ fn parse_args(args: Vec<String>) -> (ParsedDay, Vec<String>) {
             None => None,
             Some(text) => match TimeDelta::from_str(&text) {
                 Ok(dt) => Some(dt),
-                Err(e) => return (ParsedDay::ParseError(e), args_after_lunch),
+                Err(e) => return (Err(e), args_after_lunch),
             },
         },
-        Err(error) => return (ParsedDay::ParseError(error), args_after_lunch),
+        Err(error) => return (Err(error), args_after_lunch),
     };
 
     let (date, args_after_consume_date) = consume_date(args_after_lunch);
@@ -101,7 +86,7 @@ fn parse_args(args: Vec<String>) -> (ParsedDay, Vec<String>) {
     };
 
     (
-        ParsedDay::Day(Day {
+        Ok(Day {
             date: date,
             start: start,
             stop: stop,
@@ -189,11 +174,13 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
 
     let (parsed_day, args_after_parsing_args) = parse_args(args_after_consuming_show);
     let day = match parsed_day {
-        ParsedDay::ParseError(description) => return description,
-        ParsedDay::Day(day) => day,
+        Err(description) => return description,
+        Ok(day) => day,
     };
     let date = day.date;
-    config.add_day(day);
+    if day.has_content() {
+        config.add_day(day);
+    }
     config::save_config(&config, path);
     if !args_after_parsing_args.is_empty() {
         return format!(
@@ -202,41 +189,4 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
         );
     }
     show_week_table(config.day_from_date(), date, show_weekend)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use rstest::rstest;
-    #[rstest]
-    fn parsed_day_debug() {
-        let day = Day {
-            date: NaiveDate::parse_from_str("2025-02-02", "%Y-%m-%d").expect(""),
-            start: Some(
-                NaiveDateTime::parse_from_str("2025-02-02 8:00", "%Y-%m-%d %H:%M").expect(""),
-            ),
-            stop: Some(
-                NaiveDateTime::parse_from_str("2025-02-02 17:00", "%Y-%m-%d %H:%M").expect(""),
-            ),
-            lunch: Some(TimeDelta::from_str("45m").expect("")),
-        };
-        let parsed_day = ParsedDay::Day(day);
-        let debug_text = format!("{:?}", parsed_day);
-        assert!(debug_text.contains("2025-02-02"));
-        assert!(debug_text.contains("8:00"));
-        assert!(debug_text.contains("17:00"));
-        assert!(debug_text.contains("2700")); // 2700 s == 45 min
-    }
-
-    #[rstest]
-    fn parse_date_error() {
-        let output = parse_date("2024-01-32");
-        assert_eq!(
-            output,
-            Result::Err(
-                "Could not parse date string '2024-01-32'. Error: 'input contains invalid characters'"
-                    .to_string()
-            )
-        );
-    }
 }

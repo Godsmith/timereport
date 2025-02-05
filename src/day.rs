@@ -37,6 +37,10 @@ impl Day {
             lunch: other.lunch.or(self.lunch),
         }
     }
+
+    pub fn has_content(&self) -> bool {
+        self.start.is_some() || self.stop.is_some() || self.lunch.is_some()
+    }
 }
 
 fn serialize_timedelta<S>(timedelta: &Option<TimeDelta>, serializer: S) -> Result<S::Ok, S::Error>
