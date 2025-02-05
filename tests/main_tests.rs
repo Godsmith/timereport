@@ -126,6 +126,12 @@ fn report_last_weekday(temp_dir: TempDir) {
 }
 
 #[rstest]
+fn report_multiple_days(temp_dir: TempDir) {
+    let output = run("monday tuesday start 8", &temp_dir);
+    assert!(output.matches("8:00").count() == 2);
+}
+
+#[rstest]
 fn subsequent_edits_of_the_same_day(temp_dir: TempDir) {
     run("start 7:00 --weekend", &temp_dir);
     let output = run("stop 15:00 --weekend", &temp_dir);
