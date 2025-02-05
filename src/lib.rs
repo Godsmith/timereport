@@ -1,6 +1,6 @@
 use argparse::consume_after_target;
 use argparse::consume_bool;
-use argparse::consume_date;
+use argparse::consume_dates;
 use chrono::prelude::*;
 use chrono::Duration;
 use chrono::TimeDelta;
@@ -34,7 +34,7 @@ pub fn parse_date(text: &str) -> Result<NaiveDateTime, String> {
     }
 }
 
-fn parse_args(args: Vec<String>) -> (Result<Day, String>, Vec<String>) {
+fn parse_args(args: Vec<String>) -> (Result<Vec<Day>, String>, Vec<String>) {
     let (start, args_after_start) = consume_after_target("start", args);
     let start = match start {
         Ok(option) => match option {
@@ -71,29 +71,30 @@ fn parse_args(args: Vec<String>) -> (Result<Day, String>, Vec<String>) {
         Err(error) => return (Err(error), args_after_lunch),
     };
 
-    let (date, args_after_consume_date) = consume_date(args_after_lunch);
-    let date = match date {
-        None => Local::now().date_naive(),
-        Some(date) => date,
-    };
-
+    let (dates, args_after_consume_date) = consume_dates(args_after_lunch);
     let (last, args_after_consume_last) = consume_bool("last", args_after_consume_date);
-
-    let date = if last {
-        date - Duration::try_weeks(1).expect("hardcoded int")
+    let dates = if dates.is_empty() {
+        vec![Local::now().date_naive()]
     } else {
-        date
+        dates
     };
-
-    (
-        Ok(Day {
-            date: date,
-            start: start,
-            stop: stop,
-            lunch: lunch,
-        }),
-        args_after_consume_last,
-    )
+    let days = dates
+        .iter()
+        .map(|date| {
+            if last {
+                *date - Duration::try_weeks(1).expect("hardcoded int")
+            } else {
+                *date
+            }
+        })
+        .map(|date| Day {
+            date,
+            start,
+            stop,
+            lunch,
+        })
+        .collect();
+    (Ok(days), args_after_consume_last)
 }
 
 fn show_week_table(
@@ -172,14 +173,19 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
         },
     };
 
-    let (parsed_day, args_after_parsing_args) = parse_args(args_after_consuming_show);
-    let day = match parsed_day {
+    let (days, args_after_parsing_args) = parse_args(args_after_consuming_show);
+    let days = match days {
         Err(description) => return description,
         Ok(day) => day,
     };
-    let date = day.date;
-    if day.has_content() {
-        config.add_day(day);
+    let date_to_display = match days.as_slice() {
+        [] => unreachable!("days cannot be empty"),
+        [first, ..] => first.date,
+    };
+    for day in days {
+        if day.has_content() {
+            config.add_day(day);
+        }
     }
     config::save_config(&config, path);
     if !args_after_parsing_args.is_empty() {
@@ -188,5 +194,5 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
             args_after_parsing_args.join(", ")
         );
     }
-    show_week_table(config.day_from_date(), date, show_weekend)
+    show_week_table(config.day_from_date(), date_to_display, show_weekend)
 }

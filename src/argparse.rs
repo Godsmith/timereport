@@ -40,7 +40,30 @@ pub fn consume_after_target(
         },
     )
 }
-pub fn consume_date(args: Vec<String>) -> (Option<NaiveDate>, Vec<String>) {
+pub fn consume_dates(args: Vec<String>) -> (Vec<NaiveDate>, Vec<String>) {
+    let mut dates = Vec::new(); // To store the collected dates
+    let mut remaining_args = args; // Start with the full input arguments
+
+    loop {
+        // Call consume_date with the remaining arguments
+        let (date, new_remaining_args) = consume_date(remaining_args);
+
+        match date {
+            Some(d) => {
+                // If a date was found, add it to the dates vector
+                dates.push(d);
+                // Update the remaining arguments for the next iteration
+                remaining_args = new_remaining_args;
+            }
+            None => {
+                // If no date was found, return the collected dates and remaining arguments
+                return (dates, new_remaining_args);
+            }
+        }
+    }
+}
+
+fn consume_date(args: Vec<String>) -> (Option<NaiveDate>, Vec<String>) {
     // List of valid weekday names
     let weekdays = [
         "monday",
