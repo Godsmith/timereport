@@ -1,3 +1,6 @@
+use std::fs::File;
+use std::io::Read;
+
 use chrono::{Duration, Local};
 use rstest::*;
 use tempfile::{tempdir, TempDir};
@@ -17,6 +20,15 @@ fn run(s: &str, temp_dir: &TempDir) -> String {
     )
 }
 
+fn config_contents(temp_dir: &TempDir) -> String {
+    let mut contents = String::new();
+    let path_buf = temp_dir.path().join("timereport.json");
+    let path = path_buf.as_path();
+    let mut file = File::open(path).expect("");
+    file.read_to_string(&mut contents).expect("");
+    contents
+}
+
 #[rstest]
 fn no_arguments_prints_current_date(temp_dir: TempDir) {
     let today = Local::now().format("%Y-%m-%d").to_string();
@@ -24,6 +36,14 @@ fn no_arguments_prints_current_date(temp_dir: TempDir) {
     let output = run("--weekend", &temp_dir);
 
     assert!(output.contains(&today));
+}
+
+#[rstest]
+fn no_argument_does_not_affect_config_file(temp_dir: TempDir) {
+    let config_before = config_contents(&temp_dir);
+    run("", &temp_dir);
+    let config_after = config_contents(&temp_dir);
+    assert!(config_before == config_after)
 }
 
 #[rstest]
