@@ -202,6 +202,14 @@ fn redo(path: &Path) -> String {
     )
 }
 
+pub fn get_show_weekend(days: &Vec<Day>, args: Vec<String>) -> (bool, Vec<String>) {
+    let (show_weekend, args) = consume_bool("--weekend", args);
+    let is_day_on_weekend = days
+        .iter()
+        .any(|day| matches!(day.date.weekday(), Weekday::Sat | Weekday::Sun));
+    return (show_weekend | is_day_on_weekend, args);
+}
+
 pub fn main(args: Vec<String>, path: &Path) -> String {
     let mut config = config::load_config(path); // TODO; rename to load
     let (has_undo, args) = consume_bool("undo", args);
@@ -224,8 +232,7 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
         Err(message) => return message,
     };
 
-    let (show_weekend, args_after_show_weekend) = consume_bool("--weekend", args);
-    let (show_html, args_after_show_html) = consume_bool("html", args_after_show_weekend);
+    let (show_html, args_after_show_html) = consume_bool("html", args);
     let (result_for_arg_after_show, args_after_consuming_show) =
         consume_after_target("show", args_after_show_html);
 
@@ -234,6 +241,22 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
         Ok(value_after_show) => value_after_show,
     };
     let today = Local::now().date_naive();
+
+    let result = parse_days(args_after_consuming_show, &config.project_names);
+    let (days, args_after_parse_days) = match result {
+        Ok((days, args)) => (days, args),
+        Err(message) => return message,
+    };
+    let date_to_display = match days.as_slice() {
+        [] => unreachable!("days cannot be empty"),
+        [first, ..] => first.date,
+    };
+    let (show_weekend, args_after_show_weekend) = get_show_weekend(&days, args_after_parse_days);
+    for day in days {
+        if day.has_content() {
+            config.add_day(day);
+        }
+    }
     match arg_after_show.as_deref() {
         None => {}
         Some(value) => match value {
@@ -257,26 +280,11 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
             _ => return format!("Unknown show command: {}", value),
         },
     };
-
-    let result = parse_days(args_after_consuming_show, &config.project_names);
-    let (days, args_after_parse_days) = match result {
-        Ok((days, args)) => (days, args),
-        Err(message) => return message,
-    };
-    let date_to_display = match days.as_slice() {
-        [] => unreachable!("days cannot be empty"),
-        [first, ..] => first.date,
-    };
-    for day in days {
-        if day.has_content() {
-            config.add_day(day);
-        }
-    }
     config::save_config(&config, path);
-    if !args_after_parse_days.is_empty() {
+    if !args_after_show_weekend.is_empty() {
         return format!(
             "Unknown or extra argument '{}'",
-            args_after_parse_days.join(", ")
+            args_after_show_weekend.join(", ")
         );
     }
     show_week_table(
