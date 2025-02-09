@@ -91,5 +91,3 @@ fn subtract_project_time_from_default_project_time(temp_dir: TempDir) {
 
     assert!(output.contains("6:15"));
 }
-
-// TODO: add project with multiple words

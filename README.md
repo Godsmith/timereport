@@ -51,6 +51,7 @@ $ t start 08:30 stop 16:00 lunch 45m
 
 ```
 $ t add myproject
+$ t add "Project containing spaces"
 ```
 
 #### Reporting time on projects
