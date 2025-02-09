@@ -24,15 +24,18 @@ A small command-line utility for reporting working time and displaying it in dif
 
 ## Usage
 
+### General
+
 It is recommended to assign an alias to timereport. Below the alias `t` is assumed.
 
-To show weekend data, add `--weekend` to the command.
+Saturdays and Sundays will only be shown if they are affected. To always show them, use `--weekend`.
 
 ### Adding data
 
 ```
 $ t 2025-02-08 start 08:30
-$ t monday stop 16:00
+$ t monday lunch 45m 
+$ t last monday stop 16:45
 ```
 
 If date is omitted, the current date will be used:
@@ -62,11 +65,16 @@ $ t project 2 8:00
 
 ### Showing data
 
+### General
+
+Add `last` to show the previous week or month.
+
 #### Console
 
 ```
 $ t
 $ t show week
+$ t show last week
 ```
 
 #### Browser

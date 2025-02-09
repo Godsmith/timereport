@@ -9,6 +9,6 @@ pub fn temp_dir() -> TempDir {
 }
 
 pub fn run(s: &str, temp_dir: &TempDir) -> String {
-    let mut args: Vec<String> = s.split_whitespace().map(|s| s.to_string()).collect();
+    let args: Vec<String> = s.split_whitespace().map(|s| s.to_string()).collect();
     main(args, &temp_dir.path().join("timereport.json").as_path())
 }

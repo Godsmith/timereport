@@ -135,6 +135,16 @@ fn show_week(temp_dir: TempDir) {
 }
 
 #[rstest]
+fn show_last_week(temp_dir: TempDir) {
+    let one_week_ago = Local::now() - Duration::try_weeks(1).expect("hardcoded int");
+    let one_week_ago = one_week_ago.format("%Y-%m-%d").to_string();
+
+    let output = run("show last week --weekend", &temp_dir);
+
+    assert!(output.contains(&one_week_ago));
+}
+
+#[rstest]
 fn show_week_html_prints_table(temp_dir: TempDir) {
     run("show week html", &temp_dir);
     FILE_CONTENT.with(|content| {

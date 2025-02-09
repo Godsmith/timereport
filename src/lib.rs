@@ -78,8 +78,9 @@ fn parse_projects(
 fn parse_days(
     args: Vec<String>,
     project_names: &Vec<String>,
+    last: bool,
 ) -> Result<(Vec<Day>, Vec<String>), String> {
-    let (start, args_after_start) = consume_after_target("start", args);
+    let (start, args) = consume_after_target("start", args);
     let start = match start {
         Ok(option) => match option {
             None => None,
@@ -91,7 +92,7 @@ fn parse_days(
         Err(error) => return Err(error),
     };
 
-    let (stop, args_after_stop) = consume_after_target("stop", args_after_start);
+    let (stop, args) = consume_after_target("stop", args);
     let stop = match stop {
         Ok(option) => match option {
             None => None,
@@ -103,7 +104,7 @@ fn parse_days(
         Err(error) => return Err(error),
     };
 
-    let (lunch, args_after_lunch) = consume_after_target("lunch", args_after_stop);
+    let (lunch, args) = consume_after_target("lunch", args);
     let lunch = match lunch {
         Ok(option) => match option {
             None => None,
@@ -115,13 +116,11 @@ fn parse_days(
         Err(error) => return Err(error),
     };
 
-    let (dates, args_after_consume_date) = consume_dates(args_after_lunch);
-    let (last, args_after_consume_last) = consume_bool("last", args_after_consume_date);
-    let (projects, args_after_parse_projects) =
-        match parse_projects(args_after_consume_last, project_names) {
-            Ok((projects, args)) => (projects, args),
-            Err(message) => return Err(message),
-        };
+    let (dates, args) = consume_dates(args);
+    let (projects, args) = match parse_projects(args, project_names) {
+        Ok((projects, args)) => (projects, args),
+        Err(message) => return Err(message),
+    };
 
     let dates = if dates.is_empty() {
         vec![Local::now().date_naive()]
@@ -145,7 +144,7 @@ fn parse_days(
             projects: projects.clone(),
         })
         .collect();
-    Ok((days, args_after_parse_projects))
+    Ok((days, args))
 }
 
 fn show_week_table(
@@ -221,6 +220,7 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
         return redo(path);
     }
     let (project_name, args) = consume_after_target("add", args);
+    let (last, args) = consume_bool("last", args);
     match project_name {
         Ok(project_name) => match project_name {
             Some(project_name) => {
@@ -240,9 +240,8 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
         Err(message) => return message,
         Ok(value_after_show) => value_after_show,
     };
-    let today = Local::now().date_naive();
 
-    let result = parse_days(args_after_consuming_show, &config.project_names);
+    let result = parse_days(args_after_consuming_show, &config.project_names, last);
     let (days, args_after_parse_days) = match result {
         Ok((days, args)) => (days, args),
         Err(message) => return message,
@@ -261,17 +260,22 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
         None => {}
         Some(value) => match value {
             "week" => {
+                let date = if last {
+                    Local::now().date_naive() - Duration::try_weeks(1).expect("hardcoded int")
+                } else {
+                    Local::now().date_naive()
+                };
                 if show_html {
                     return show_week_table_html(
                         config.day_from_date(),
-                        today,
+                        date,
                         show_weekend,
                         config.project_names,
                     );
                 } else {
                     return show_week_table(
                         config.day_from_date(),
-                        today,
+                        date,
                         show_weekend,
                         config.project_names,
                     );
