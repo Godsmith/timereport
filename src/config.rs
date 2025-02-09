@@ -10,6 +10,7 @@ use crate::day::Day;
 
 #[derive(Serialize, Deserialize)]
 pub struct Config {
+    pub project_names: Vec<String>,
     days: Vec<Day>,
     undone: Vec<Day>,
 }
@@ -17,9 +18,13 @@ pub struct Config {
 impl Config {
     fn new(days: Vec<Day>) -> Self {
         Self {
+            project_names: Vec::new(),
             days,
             undone: Vec::new(),
         }
+    }
+    pub fn add_project(&mut self, name: String) -> () {
+        self.project_names.push(name);
     }
 
     pub fn add_day(&mut self, day: Day) -> () {
@@ -47,11 +52,11 @@ impl Config {
         Ok(date)
     }
 
-    pub fn day_from_date(self) -> HashMap<NaiveDate, Day> {
+    pub fn day_from_date(&self) -> HashMap<NaiveDate, Day> {
         let mut day_from_date: HashMap<NaiveDate, Day> = HashMap::new();
-        for day in self.days {
+        for day in &self.days {
             match day_from_date.get(&day.date) {
-                None => day_from_date.insert(day.date, day),
+                None => day_from_date.insert(day.date, day.clone()),
                 Some(old_day) => day_from_date.insert(day.date, old_day.combine(day)),
             };
         }

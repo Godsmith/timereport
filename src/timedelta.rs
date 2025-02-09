@@ -3,15 +3,23 @@ use chrono::TimeDelta;
 use regex::Regex;
 
 fn to_hours_and_minutes(text: &str) -> Result<(&str, &str), String> {
+    // 8: 15
     let re = Regex::new(r"(\d+):?(\d\d)").unwrap();
     if let Some(captures) = re.captures(text) {
         let (_, groups): (&str, [&str; 2]) = captures.extract();
         return Ok((groups[0], groups[1]));
     }
+    // 45m
     let re2 = Regex::new(r"(\d+)m").unwrap();
     if let Some(captures) = re2.captures(text) {
         let (_, groups): (&str, [&str; 1]) = captures.extract();
         return Ok((&"0", groups[0]));
+    }
+    // 8
+    let re3 = Regex::new(r"(\d+)").unwrap();
+    if let Some(captures) = re3.captures(text) {
+        let (_, groups): (&str, [&str; 1]) = captures.extract();
+        return Ok((groups[0], &"0"));
     }
     return Err(format!("Could not parse timedelta string '{}'.", text));
 }

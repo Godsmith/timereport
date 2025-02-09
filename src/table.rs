@@ -20,8 +20,9 @@ pub fn create_week_table(
     date: NaiveDate,
     day_from_date: HashMap<NaiveDate, Day>,
     show_weekend: bool,
+    project_names: Vec<String>,
 ) -> String {
-    create_table(date, day_from_date, show_weekend).to_string()
+    create_table(date, day_from_date, show_weekend, project_names).to_string()
 }
 
 /// Currently does not delete the file automatically.
@@ -29,8 +30,15 @@ pub fn create_html_week_table(
     date: NaiveDate,
     day_from_date: HashMap<NaiveDate, Day>,
     show_weekend: bool,
+    project_names: Vec<String>,
 ) -> Result<(), Error> {
-    let html = to_html_table(create_table(date, day_from_date, show_weekend)).to_html_string();
+    let html = to_html_table(create_table(
+        date,
+        day_from_date,
+        show_weekend,
+        project_names,
+    ))
+    .to_html_string();
     let tmp_dir = tempdir()?;
     let path = tmp_dir.path().join("tmp.html");
     fs::write(&path, html)?;
@@ -58,6 +66,7 @@ fn create_table(
     date_to_display: NaiveDate,
     day_from_date: HashMap<NaiveDate, Day>,
     show_weekend: bool,
+    project_names: Vec<String>,
 ) -> tabled::Table {
     let mut builder = Builder::default();
     let week_days = days_in_week_of(date_to_display, show_weekend);
@@ -75,6 +84,20 @@ fn create_table(
     let mut lunch_row = vec!["lunch".to_string()];
     lunch_row.extend(lunches(&week_days, &day_from_date));
     builder.push_record(lunch_row);
+
+    let mut default_project_row = vec!["1. Default project".to_string()];
+    default_project_row.extend(default_project_timedeltas(&week_days, &day_from_date));
+    builder.push_record(default_project_row);
+
+    for (index, project_name) in project_names.iter().enumerate() {
+        let mut row = vec![format!("{}. {}", index + 2, project_name.clone())];
+        row.extend(project_timedeltas(
+            &project_name,
+            &week_days,
+            &day_from_date,
+        ));
+        builder.push_record(row);
+    }
 
     builder.build()
 }
@@ -121,15 +144,60 @@ fn lunches(week_days: &Vec<NaiveDate>, days: &HashMap<NaiveDate, Day>) -> Vec<St
             None => "".to_string(),
             Some(day) => match day.lunch {
                 None => "".to_string(),
-                Some(timedelta) => format!(
-                    "{}:{}",
-                    timedelta.num_hours(),
-                    timedelta.num_minutes() - timedelta.num_hours() * 60
-                )
-                .to_string(),
+                Some(timedelta) => format_timedelta(&timedelta),
             },
         })
         .collect()
+}
+
+fn default_project_timedeltas(
+    week_days: &Vec<NaiveDate>,
+    days: &HashMap<NaiveDate, Day>,
+) -> Vec<String> {
+    week_days
+        .iter()
+        .map(|date| match days.get(date) {
+            None => "".to_string(),
+            Some(day) => match default_project_time(day) {
+                Some(timedelta) => format_timedelta(&timedelta),
+                None => "".to_string(),
+            }, // TODO: will change when implementing showing time for default project
+        })
+        .collect()
+}
+
+fn default_project_time(day: &Day) -> Option<TimeDelta> {
+    match (day.start, day.stop, day.lunch) {
+        (Some(start), Some(stop), Some(lunch)) => {
+            Some(stop - start - lunch - day.projects.values().sum())
+        }
+        _ => None,
+    }
+}
+
+fn project_timedeltas(
+    project_name: &String,
+    week_days: &Vec<NaiveDate>,
+    days: &HashMap<NaiveDate, Day>,
+) -> Vec<String> {
+    week_days
+        .iter()
+        .map(|date| match days.get(date) {
+            None => "".to_string(),
+            Some(day) => match day.projects.get(project_name) {
+                None => "".to_string(),
+                Some(timedelta) => format_timedelta(timedelta),
+            },
+        })
+        .collect()
+}
+
+fn format_timedelta(timedelta: &TimeDelta) -> String {
+    return format!(
+        "{:02}:{:02}",
+        timedelta.num_hours(),
+        timedelta.num_minutes() - timedelta.num_hours() * 60
+    );
 }
 
 fn days_in_week_of(date: NaiveDate, show_weekend: bool) -> Vec<NaiveDate> {

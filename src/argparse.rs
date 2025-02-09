@@ -40,6 +40,41 @@ pub fn consume_after_target(
         },
     )
 }
+pub fn consume_two_after_target(
+    target: &str,
+    args: Vec<String>,
+) -> (Result<Option<(String, String)>, String>, Vec<String>) {
+    // First, find the position of the target without holding a borrow
+    let pos = args.iter().position(|s| s == target);
+
+    match pos {
+        None => (Ok(None), args),
+        Some(i) => {
+            if i + 2 >= args.len() {
+                (Err(format!("Not enough arguments after {}", target)), args)
+            } else {
+                // Extract the two values after the target
+                let s1 = args[i + 1].clone();
+                let s2 = args[i + 2].clone();
+
+                // Create a new vector excluding the target and the next two elements
+                let modified: Vec<String> = args
+                    .into_iter() // Take ownership of args
+                    .enumerate()
+                    .filter_map(|(idx, s)| {
+                        if idx != i && idx != i + 1 && idx != i + 2 {
+                            Some(s)
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
+
+                (Ok(Some((s1, s2))), modified)
+            }
+        }
+    }
+}
 pub fn consume_dates(args: Vec<String>) -> (Vec<NaiveDate>, Vec<String>) {
     let mut dates = Vec::new(); // To store the collected dates
     let mut remaining_args = args; // Start with the full input arguments
