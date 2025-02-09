@@ -6,21 +6,21 @@ use utils::*;
 #[rstest]
 fn report_on_project(temp_dir: TempDir) {
     run("add myproject", &temp_dir);
-    let output = run("project myproject 8", &temp_dir); // TODO: add to run instead
+    let output = run("project myproject 8", &temp_dir);
 
     assert!(output.contains("08:00"));
 }
 
 #[rstest]
 fn report_on_unknown_project_prints_error(temp_dir: TempDir) {
-    let output = run("project myproject 8", &temp_dir); // TODO: add to run instead
+    let output = run("project myproject 8", &temp_dir);
 
     assert!(output.contains("Unknown project 'myproject'"))
 }
 
 #[rstest]
 fn show_default_project_name(temp_dir: TempDir) {
-    let output = run("", &temp_dir); // TODO: add to run instead
+    let output = run("", &temp_dir);
 
     assert!(output.contains("Default project"));
 }
@@ -28,7 +28,7 @@ fn show_default_project_name(temp_dir: TempDir) {
 #[rstest]
 fn show_number_before_project_name(temp_dir: TempDir) {
     run("add myproject", &temp_dir);
-    let output = run("", &temp_dir); // TODO: add to run instead
+    let output = run("", &temp_dir);
 
     assert!(output.contains("2. myproject"));
 }
@@ -36,7 +36,7 @@ fn show_number_before_project_name(temp_dir: TempDir) {
 #[rstest]
 fn report_on_number(temp_dir: TempDir) {
     run("add myproject", &temp_dir);
-    let output = run("project 2 8", &temp_dir); // TODO: add to run instead
+    let output = run("project 2 8", &temp_dir);
 
     assert!(output.contains("08:00"));
 }
@@ -44,7 +44,7 @@ fn report_on_number(temp_dir: TempDir) {
 #[rstest]
 fn report_on_0_gives_error(temp_dir: TempDir) {
     run("add myproject", &temp_dir);
-    let output = run("project 0 8", &temp_dir); // TODO: add to run instead
+    let output = run("project 0 8", &temp_dir);
 
     assert!(output.contains("No project with index 0"));
 }
@@ -52,7 +52,7 @@ fn report_on_0_gives_error(temp_dir: TempDir) {
 #[rstest]
 fn report_on_1_gives_error(temp_dir: TempDir) {
     run("add myproject", &temp_dir);
-    let output = run("project 1 8", &temp_dir); // TODO: add to run instead
+    let output = run("project 1 8", &temp_dir);
 
     assert!(output.contains("Cannot report time on default project"));
 }
@@ -60,7 +60,7 @@ fn report_on_1_gives_error(temp_dir: TempDir) {
 #[rstest]
 fn report_on_999_gives_error(temp_dir: TempDir) {
     run("add myproject", &temp_dir);
-    let output = run("project 999 8", &temp_dir); // TODO: add to run instead
+    let output = run("project 999 8", &temp_dir);
 
     assert!(output.contains("No project with index 999"));
 }
