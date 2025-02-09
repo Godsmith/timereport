@@ -23,6 +23,13 @@ impl Config {
             undone: Vec::new(),
         }
     }
+    pub fn save(&self, path: &Path) {
+        let json_string = serde_json::to_string_pretty(&self).unwrap();
+        match fs::write(path, json_string) {
+            Ok(_) => {}
+            Err(_) => eprintln!("Error writing to file {}", path.to_string_lossy()),
+        }
+    }
     pub fn add_project(&mut self, name: String) -> () {
         self.project_names.push(name);
     }
@@ -64,7 +71,7 @@ impl Config {
     }
 }
 
-pub fn load_config(path: &Path) -> Config {
+pub fn load(path: &Path) -> Config {
     if fs::metadata(path).is_err() {
         create_empty_config_file(path);
     }
@@ -75,16 +82,8 @@ pub fn load_config(path: &Path) -> Config {
     serde_json::from_str(&contents).expect(&format!("Failed to parse {}", path.to_string_lossy()))
 }
 
-pub fn save_config(config: &Config, path: &Path) {
-    let json_string = serde_json::to_string_pretty(&config).unwrap();
-    match fs::write(path, json_string) {
-        Ok(_) => {}
-        Err(_) => eprintln!("Error writing to file {}", path.to_string_lossy()),
-    }
-}
-
 fn create_empty_config_file(path: &Path) {
     fs::File::create(path).expect(&format!("Failed to create file {}", path.to_string_lossy()));
     let config = Config::new(Vec::new());
-    save_config(&config, path);
+    config.save(path);
 }

@@ -184,13 +184,13 @@ fn create_html_table(
 }
 
 fn undo(path: &Path) -> String {
-    let mut config = config::load_config(path);
+    let mut config = config::load(path);
 
     let date = match config.undo() {
         Ok(date) => date,
         Err(message) => return message,
     };
-    config::save_config(&config, path);
+    config.save(path);
     let show_weekend = matches!(date.weekday(), Weekday::Sat | Weekday::Sun);
     table::create_terminal_table(
         date,
@@ -202,12 +202,12 @@ fn undo(path: &Path) -> String {
 }
 
 fn redo(path: &Path) -> String {
-    let mut config = config::load_config(path);
+    let mut config = config::load(path);
     let date = match config.redo() {
         Ok(date) => date,
         Err(message) => return message,
     };
-    config::save_config(&config, path);
+    config.save(path);
     let show_weekend = matches!(date.weekday(), Weekday::Sat | Weekday::Sun);
     table::create_terminal_table(
         date,
@@ -227,7 +227,7 @@ pub fn get_show_weekend(days: &Vec<Day>, args: Vec<String>) -> (bool, Vec<String
 }
 
 pub fn main(args: Vec<String>, path: &Path) -> String {
-    let mut config = config::load_config(path); // TODO; rename to load
+    let mut config = config::load(path);
     let (has_undo, args) = consume_bool("undo", args);
     if has_undo {
         return undo(path);
@@ -242,7 +242,7 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
         Ok(project_name) => match project_name {
             Some(project_name) => {
                 config.add_project(project_name);
-                config::save_config(&config, path); // TODO: make instance method
+                config.save(path);
             }
             None => (),
         },
@@ -323,7 +323,7 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
             }
         }
     };
-    config::save_config(&config, path);
+    config.save(path);
     if !args_after_show_weekend.is_empty() {
         return format!(
             "Unknown or extra argument '{}'",
