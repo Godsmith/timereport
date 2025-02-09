@@ -6,6 +6,8 @@ use chrono::prelude::*;
 use chrono::Duration;
 use chrono::TimeDelta;
 use std::collections::HashMap;
+mod naive_date;
+use naive_date::last_day_of_month;
 use std::path::Path;
 mod traits;
 use traits::Parsable;
@@ -17,6 +19,21 @@ pub mod mockopen;
 pub mod table;
 mod timedelta;
 use day::Day;
+
+const MONTHS: &[&str] = &[
+    "january",
+    "february",
+    "march",
+    "april",
+    "may",
+    "june",
+    "july",
+    "august",
+    "september",
+    "october",
+    "november",
+    "december",
+];
 
 pub fn parse_date(text: &str) -> Result<NaiveDateTime, String> {
     let today = Local::now();
@@ -147,22 +164,20 @@ fn parse_days(
     Ok((days, args))
 }
 
-fn show_week_table(
-    day_from_date: HashMap<NaiveDate, Day>,
-    date: NaiveDate,
+fn create_html_table(
+    first_date: NaiveDate,
+    last_date: NaiveDate,
+    day_from_date: &HashMap<NaiveDate, Day>,
     show_weekend: bool,
-    project_names: Vec<String>,
+    project_names: &Vec<String>,
 ) -> String {
-    table::create_week_table(date, day_from_date, show_weekend, project_names)
-}
-
-fn show_week_table_html(
-    day_from_date: HashMap<NaiveDate, Day>,
-    date: NaiveDate,
-    show_weekend: bool,
-    project_names: Vec<String>,
-) -> String {
-    match table::create_html_week_table(date, day_from_date, show_weekend, project_names) {
+    match table::create_html_table(
+        first_date,
+        last_date,
+        day_from_date,
+        show_weekend,
+        project_names,
+    ) {
         Ok(_) => "".to_string(),
         Err(error) => format!("Error: '{}'", error.to_string()),
     }
@@ -177,11 +192,12 @@ fn undo(path: &Path) -> String {
     };
     config::save_config(&config, path);
     let show_weekend = matches!(date.weekday(), Weekday::Sat | Weekday::Sun);
-    show_week_table(
-        config.day_from_date(),
+    table::create_terminal_table(
         date,
+        date,
+        &config.day_from_date(),
         show_weekend,
-        config.project_names,
+        &config.project_names,
     )
 }
 
@@ -193,11 +209,12 @@ fn redo(path: &Path) -> String {
     };
     config::save_config(&config, path);
     let show_weekend = matches!(date.weekday(), Weekday::Sat | Weekday::Sun);
-    show_week_table(
-        config.day_from_date(),
+    table::create_terminal_table(
         date,
+        date,
+        &config.day_from_date(),
         show_weekend,
-        config.project_names,
+        &config.project_names,
     )
 }
 
@@ -258,31 +275,53 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
     }
     match arg_after_show.as_deref() {
         None => {}
-        Some(value) => match value {
-            "week" => {
-                let date = if last {
-                    Local::now().date_naive() - Duration::try_weeks(1).expect("hardcoded int")
-                } else {
-                    Local::now().date_naive()
-                };
-                if show_html {
-                    return show_week_table_html(
-                        config.day_from_date(),
-                        date,
-                        show_weekend,
-                        config.project_names,
-                    );
-                } else {
-                    return show_week_table(
-                        config.day_from_date(),
-                        date,
-                        show_weekend,
-                        config.project_names,
-                    );
+        Some(value) => {
+            let (first_date, last_date) = match value {
+                "week" => {
+                    let date = if last {
+                        Local::now().date_naive() - Duration::try_weeks(1).expect("hardcoded int")
+                    } else {
+                        Local::now().date_naive()
+                    };
+                    (date, date)
                 }
+                _ if MONTHS.contains(&value) => {
+                    let arg_month_number = MONTHS
+                        .iter()
+                        .position(|month| month == &value)
+                        .expect("already ensured that the month is in the list")
+                        as u32;
+                    let current_month_number = Local::now().month0();
+                    let year = if arg_month_number > current_month_number {
+                        Local::now().year() - 1
+                    } else {
+                        Local::now().year()
+                    };
+                    let first_date = NaiveDate::from_ymd_opt(year, arg_month_number + 1, 1)
+                        .expect("should be inside range");
+                    let last_date = last_day_of_month(first_date);
+                    (first_date, last_date)
+                }
+                _ => return format!("Unknown show command: {}", value),
+            };
+            if show_html {
+                return create_html_table(
+                    first_date,
+                    last_date,
+                    &config.day_from_date(),
+                    show_weekend,
+                    &config.project_names,
+                );
+            } else {
+                return table::create_terminal_table(
+                    first_date,
+                    last_date,
+                    &config.day_from_date(),
+                    show_weekend,
+                    &config.project_names,
+                );
             }
-            _ => return format!("Unknown show command: {}", value),
-        },
+        }
     };
     config::save_config(&config, path);
     if !args_after_show_weekend.is_empty() {
@@ -291,10 +330,11 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
             args_after_show_weekend.join(", ")
         );
     }
-    show_week_table(
-        config.day_from_date(),
+    table::create_terminal_table(
         date_to_display,
+        date_to_display,
+        &config.day_from_date(),
         show_weekend,
-        config.project_names,
+        &config.project_names,
     )
 }

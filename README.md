@@ -65,9 +65,9 @@ $ t project 2 8:00
 
 ### Showing data
 
-### General
+Data can be shown one week or one month at a time, either in the terminal or in a web browser.
 
-Add `last` to show the previous week or month.
+Add `last` to show the previous week.
 
 #### Console
 
@@ -75,6 +75,7 @@ Add `last` to show the previous week or month.
 $ t
 $ t show week
 $ t show last week
+$ t show january
 ```
 
 #### Browser

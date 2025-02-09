@@ -2,6 +2,7 @@ use rstest::*;
 use tempfile::TempDir;
 use timereport::mockopen::open::FILE_CONTENT;
 mod utils;
+use chrono::prelude::*;
 use chrono::{Duration, Local};
 use utils::*;
 
@@ -39,4 +40,20 @@ fn show_unknown(temp_dir: TempDir) {
 
     assert!(output.contains("Unknown show command"));
     assert!(output.contains("foo"));
+}
+
+#[rstest]
+fn show_month_first_day_of_month(temp_dir: TempDir) {
+    let output = run("show january", &temp_dir);
+    let current_year = Local::now().year();
+
+    assert!(output.contains(format!("{}-01-01", current_year).as_str()));
+}
+
+#[rstest]
+fn show_month_last_day_of_month(temp_dir: TempDir) {
+    let output = run("show january", &temp_dir);
+    let current_year = Local::now().year();
+
+    assert!(output.contains(format!("{}-01-31", current_year).as_str()));
 }

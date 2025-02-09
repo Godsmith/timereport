@@ -1,6 +1,7 @@
 use crate::day::Day;
 #[cfg(feature = "mock-open")]
 use crate::mockopen::open;
+use crate::naive_date::one_date_per_week;
 use build_html::Html;
 use chrono::prelude::*;
 use chrono::TimeDelta;
@@ -16,29 +17,40 @@ use tabled::grid::records::vec_records::Cell;
 use tabled::grid::records::Records;
 use tempfile::tempdir;
 
-pub fn create_week_table(
-    date: NaiveDate,
-    day_from_date: HashMap<NaiveDate, Day>,
+pub fn create_terminal_table(
+    first_date: NaiveDate,
+    last_date: NaiveDate,
+    day_from_date: &HashMap<NaiveDate, Day>,
     show_weekend: bool,
-    project_names: Vec<String>,
+    project_names: &Vec<String>,
 ) -> String {
-    create_table(date, day_from_date, show_weekend, project_names).to_string()
+    one_date_per_week(first_date, last_date)
+        .iter()
+        .map(|date| create_table(*date, day_from_date, show_weekend, project_names).to_string())
+        .collect::<Vec<_>>()
+        .join("\n\n")
 }
 
 /// Currently does not delete the file automatically.
-pub fn create_html_week_table(
-    date: NaiveDate,
-    day_from_date: HashMap<NaiveDate, Day>,
+pub fn create_html_table(
+    first_date: NaiveDate,
+    last_date: NaiveDate,
+    day_from_date: &HashMap<NaiveDate, Day>,
     show_weekend: bool,
-    project_names: Vec<String>,
+    project_names: &Vec<String>,
 ) -> Result<(), Error> {
-    let html = to_html_table(create_table(
-        date,
-        day_from_date,
-        show_weekend,
-        project_names,
-    ))
-    .to_html_string();
+    let html: String = one_date_per_week(first_date, last_date)
+        .iter()
+        .map(|date| {
+            to_html_table(create_table(
+                *date,
+                &day_from_date,
+                show_weekend,
+                &project_names,
+            ))
+            .to_html_string()
+        })
+        .collect();
     let tmp_dir = tempdir()?;
     let path = tmp_dir.path().join("tmp.html");
     fs::write(&path, html)?;
@@ -64,9 +76,9 @@ fn to_html_table(table: tabled::Table) -> build_html::Table {
 
 fn create_table(
     date_to_display: NaiveDate,
-    day_from_date: HashMap<NaiveDate, Day>,
+    day_from_date: &HashMap<NaiveDate, Day>,
     show_weekend: bool,
-    project_names: Vec<String>,
+    project_names: &Vec<String>,
 ) -> tabled::Table {
     let mut builder = Builder::default();
     let week_days = days_in_week_of(date_to_display, show_weekend);
