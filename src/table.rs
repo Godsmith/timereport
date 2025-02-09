@@ -161,7 +161,7 @@ fn default_project_timedeltas(
             Some(day) => match default_project_time(day) {
                 Some(timedelta) => format_timedelta(&timedelta),
                 None => "".to_string(),
-            }, // TODO: will change when implementing showing time for default project
+            },
         })
         .collect()
 }
