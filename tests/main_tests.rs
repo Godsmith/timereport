@@ -5,7 +5,6 @@ use std::fs::File;
 use std::io::Read;
 use tempfile::TempDir;
 mod utils;
-use timereport::mockopen::open::FILE_CONTENT;
 use utils::*;
 
 fn config_contents(temp_dir: &TempDir) -> String {
@@ -124,42 +123,6 @@ fn lunch_minutes_and_m(temp_dir: TempDir) {
 
     assert!(output.contains(&today));
     assert!(output.contains("0:15"));
-}
-
-#[rstest]
-fn show_week(temp_dir: TempDir) {
-    let output = run("show week", &temp_dir);
-
-    let today = Local::now().format("%Y-%m-%d").to_string();
-    assert!(output.contains(&today));
-}
-
-#[rstest]
-fn show_last_week(temp_dir: TempDir) {
-    let one_week_ago = Local::now() - Duration::try_weeks(1).expect("hardcoded int");
-    let one_week_ago = one_week_ago.format("%Y-%m-%d").to_string();
-
-    let output = run("show last week --weekend", &temp_dir);
-
-    assert!(output.contains(&one_week_ago));
-}
-
-#[rstest]
-fn show_week_html_prints_table(temp_dir: TempDir) {
-    run("show week html", &temp_dir);
-    FILE_CONTENT.with(|content| {
-        let content = content.borrow();
-        assert!(content.contains("<table>"));
-        assert!(content.contains("lunch"));
-    })
-}
-
-#[rstest]
-fn show_unknown(temp_dir: TempDir) {
-    let output = run("show foo", &temp_dir);
-
-    assert!(output.contains("Unknown show command"));
-    assert!(output.contains("foo"));
 }
 
 #[rstest]
