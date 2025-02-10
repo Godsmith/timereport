@@ -2,6 +2,7 @@ use crate::day::Day;
 #[cfg(feature = "mock-open")]
 use crate::mockopen::open;
 use crate::naive_date::one_date_per_week;
+use crate::traits::Parsable;
 use build_html::Html;
 use chrono::prelude::*;
 use chrono::TimeDelta;
@@ -173,7 +174,7 @@ fn lunches(week_days: &Vec<NaiveDate>, days: &HashMap<NaiveDate, Day>) -> Vec<St
             None => "".to_string(),
             Some(day) => match day.lunch {
                 None => "".to_string(),
-                Some(timedelta) => format_timedelta(&timedelta),
+                Some(timedelta) => timedelta.to_hhmm(),
             },
         })
         .collect()
@@ -188,7 +189,7 @@ fn default_project_timedeltas(
         .map(|date| match days.get(date) {
             None => "".to_string(),
             Some(day) => match default_project_time(day) {
-                Some(timedelta) => format_timedelta(&timedelta),
+                Some(timedelta) => timedelta.to_hhmm(),
                 None => "".to_string(),
             },
         })
@@ -215,7 +216,7 @@ fn project_timedeltas(
             None => "".to_string(),
             Some(day) => match day.projects.get(project_name) {
                 None => "".to_string(),
-                Some(timedelta) => format_timedelta(timedelta),
+                Some(timedelta) => timedelta.to_hhmm(),
             },
         })
         .collect()
@@ -232,27 +233,12 @@ fn flex(
             None => "".to_string(),
             Some(day) => match (day.start, day.stop, day.lunch) {
                 (Some(start), Some(stop), Some(lunch)) => {
-                    format_timedelta(&(stop - start - lunch - working_time_per_day))
+                    (stop - start - lunch - working_time_per_day).to_hhmm()
                 }
                 _ => "".to_string(),
             },
         })
         .collect()
-}
-
-fn format_timedelta(timedelta: &TimeDelta) -> String {
-    let total_seconds = timedelta.num_seconds();
-    let is_negative = total_seconds < 0;
-    let total_seconds = total_seconds.abs(); // Work with absolute value for calculations
-
-    let hours = total_seconds / 3600;
-    let minutes = (total_seconds % 3600) / 60;
-
-    if is_negative {
-        format!("-{:02}:{:02}", hours, minutes)
-    } else {
-        format!("{:02}:{:02}", hours, minutes)
-    }
 }
 
 fn days_in_week_of(date: NaiveDate, show_weekend: bool) -> Vec<NaiveDate> {
