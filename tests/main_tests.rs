@@ -182,3 +182,10 @@ fn positive_flex(temp_dir: TempDir) {
 
     assert!(output.contains("00:30"));
 }
+
+#[rstest]
+fn negative_flex(temp_dir: TempDir) {
+    let output = run("start 8 stop 15 lunch 45m", &temp_dir);
+
+    assert!(output.contains("-01:30"));
+}

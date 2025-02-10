@@ -241,11 +241,18 @@ fn flex(
 }
 
 fn format_timedelta(timedelta: &TimeDelta) -> String {
-    return format!(
-        "{:02}:{:02}",
-        timedelta.num_hours(),
-        timedelta.num_minutes() - timedelta.num_hours() * 60
-    );
+    let total_seconds = timedelta.num_seconds();
+    let is_negative = total_seconds < 0;
+    let total_seconds = total_seconds.abs(); // Work with absolute value for calculations
+
+    let hours = total_seconds / 3600;
+    let minutes = (total_seconds % 3600) / 60;
+
+    if is_negative {
+        format!("-{:02}:{:02}", hours, minutes)
+    } else {
+        format!("{:02}:{:02}", hours, minutes)
+    }
 }
 
 fn days_in_week_of(date: NaiveDate, show_weekend: bool) -> Vec<NaiveDate> {
