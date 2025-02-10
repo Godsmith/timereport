@@ -3,16 +3,18 @@ use std::fs::{self, File};
 use std::io::Read;
 use std::path::Path;
 
-use chrono::NaiveDate;
-use serde::{Deserialize, Serialize};
-
 use crate::day::Day;
+use chrono::{NaiveDate, TimeDelta};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[derive(Serialize, Deserialize)]
 pub struct Config {
     pub project_names: Vec<String>,
     days: Vec<Day>,
     undone: Vec<Day>,
+    #[serde(deserialize_with = "deserialize_timedelta")]
+    #[serde(serialize_with = "serialize_timedelta")]
+    pub working_time_per_day: TimeDelta,
 }
 
 impl Config {
@@ -21,6 +23,8 @@ impl Config {
             project_names: Vec::new(),
             days,
             undone: Vec::new(),
+            // TODO: make customizable
+            working_time_per_day: TimeDelta::new(27900, 0).expect("hardcoded seconds"),
         }
     }
     pub fn save(&self, path: &Path) {
@@ -86,4 +90,21 @@ fn create_empty_config_file(path: &Path) {
     fs::File::create(path).expect(&format!("Failed to create file {}", path.to_string_lossy()));
     let config = Config::new(Vec::new());
     config.save(path);
+}
+
+// TODO: move to timedelta.rs together with other serialization?
+fn serialize_timedelta<S>(timedelta: &TimeDelta, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    serializer.serialize_i64(timedelta.num_seconds())
+}
+
+fn deserialize_timedelta<'de, D>(deserializer: D) -> Result<TimeDelta, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let int_or_none = Option::deserialize(deserializer)?;
+    let timedelta_or_none = TimeDelta::try_seconds(int_or_none.unwrap()).unwrap();
+    Ok(timedelta_or_none)
 }

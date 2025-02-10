@@ -23,10 +23,20 @@ pub fn create_terminal_table(
     day_from_date: &HashMap<NaiveDate, Day>,
     show_weekend: bool,
     project_names: &Vec<String>,
+    working_time_per_day: &TimeDelta,
 ) -> String {
     one_date_per_week(first_date, last_date)
         .iter()
-        .map(|date| create_table(*date, day_from_date, show_weekend, project_names).to_string())
+        .map(|date| {
+            create_table(
+                *date,
+                day_from_date,
+                show_weekend,
+                project_names,
+                working_time_per_day,
+            )
+            .to_string()
+        })
         .collect::<Vec<_>>()
         .join("\n\n")
 }
@@ -38,6 +48,7 @@ pub fn create_html_table(
     day_from_date: &HashMap<NaiveDate, Day>,
     show_weekend: bool,
     project_names: &Vec<String>,
+    working_time_per_day: &TimeDelta,
 ) -> Result<(), Error> {
     let html: String = one_date_per_week(first_date, last_date)
         .iter()
@@ -47,6 +58,7 @@ pub fn create_html_table(
                 &day_from_date,
                 show_weekend,
                 &project_names,
+                working_time_per_day,
             ))
             .to_html_string()
         })
@@ -79,6 +91,7 @@ fn create_table(
     day_from_date: &HashMap<NaiveDate, Day>,
     show_weekend: bool,
     project_names: &Vec<String>,
+    working_time_per_day: &TimeDelta,
 ) -> tabled::Table {
     let mut builder = Builder::default();
     let week_days = days_in_week_of(date_to_display, show_weekend);
@@ -110,6 +123,10 @@ fn create_table(
         ));
         builder.push_record(row);
     }
+
+    let mut flex_row = vec!["Flex".to_string()];
+    flex_row.extend(flex(&week_days, &day_from_date, *working_time_per_day));
+    builder.push_record(flex_row);
 
     builder.build()
 }
@@ -199,6 +216,25 @@ fn project_timedeltas(
             Some(day) => match day.projects.get(project_name) {
                 None => "".to_string(),
                 Some(timedelta) => format_timedelta(timedelta),
+            },
+        })
+        .collect()
+}
+
+fn flex(
+    week_days: &Vec<NaiveDate>,
+    days: &HashMap<NaiveDate, Day>,
+    working_time_per_day: TimeDelta,
+) -> Vec<String> {
+    week_days
+        .iter()
+        .map(|date| match days.get(date) {
+            None => "".to_string(),
+            Some(day) => match (day.start, day.stop, day.lunch) {
+                (Some(start), Some(stop), Some(lunch)) => {
+                    format_timedelta(&(stop - start - lunch - working_time_per_day))
+                }
+                _ => "".to_string(),
             },
         })
         .collect()

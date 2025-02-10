@@ -170,6 +170,7 @@ fn create_html_table(
     day_from_date: &HashMap<NaiveDate, Day>,
     show_weekend: bool,
     project_names: &Vec<String>,
+    working_time_per_day: &TimeDelta,
 ) -> String {
     match table::create_html_table(
         first_date,
@@ -177,6 +178,7 @@ fn create_html_table(
         day_from_date,
         show_weekend,
         project_names,
+        working_time_per_day,
     ) {
         Ok(_) => "".to_string(),
         Err(error) => format!("Error: '{}'", error.to_string()),
@@ -198,6 +200,7 @@ fn undo(path: &Path) -> String {
         &config.day_from_date(),
         show_weekend,
         &config.project_names,
+        &config.working_time_per_day,
     )
 }
 
@@ -215,6 +218,7 @@ fn redo(path: &Path) -> String {
         &config.day_from_date(),
         show_weekend,
         &config.project_names,
+        &config.working_time_per_day,
     )
 }
 
@@ -311,6 +315,7 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
                     &config.day_from_date(),
                     show_weekend,
                     &config.project_names,
+                    &config.working_time_per_day,
                 );
             } else {
                 return table::create_terminal_table(
@@ -319,6 +324,7 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
                     &config.day_from_date(),
                     show_weekend,
                     &config.project_names,
+                    &config.working_time_per_day,
                 );
             }
         }
@@ -336,5 +342,6 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
         &config.day_from_date(),
         show_weekend,
         &config.project_names,
+        &config.working_time_per_day,
     )
 }

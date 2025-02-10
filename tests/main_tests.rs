@@ -175,3 +175,10 @@ fn adding_day_clears_undone(temp_dir: TempDir) {
 
     assert!(output.contains("Nothing to redo"));
 }
+
+#[rstest]
+fn positive_flex(temp_dir: TempDir) {
+    let output = run("start 8 stop 17 lunch 45m", &temp_dir);
+
+    assert!(output.contains("00:30"));
+}
