@@ -100,11 +100,8 @@ $ t start 8:30 --weekend
 ### Running tests
 
 ```
-cargo test --features mock-open
+cargo test
 ```
-
-The mock-open feature is necessary to add so that the test does not open 
-a lot of browser windows.
 
 ### Running tests with coverage
 

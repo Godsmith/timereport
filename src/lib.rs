@@ -14,6 +14,7 @@ use traits::Parsable;
 mod argparse;
 mod config;
 mod day;
+#[cfg(feature = "mock-open")]
 pub mod mockopen;
 // Rust note: need to do pub table here since it is used in the binary crate main.rs
 pub mod table;

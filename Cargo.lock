@@ -612,6 +612,7 @@ dependencies = [
  "serde_json",
  "tabled",
  "tempfile",
+ "timereport",
 ]
 
 [[package]]

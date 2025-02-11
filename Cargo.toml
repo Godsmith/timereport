@@ -1,7 +1,7 @@
 [package]
 name = "timereport"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 description = "A small command-line utility for reporting working time and displaying it in different formats."
 license = "MIT"
 repository = "https://github.com/Godsmith/timereport"
@@ -21,3 +21,9 @@ tempfile = "3.10.1"
 
 [features]
 mock-open = []
+
+# Load mock-open when running cargo test
+# Solution from https://stackoverflow.com/questions/72736661/how-to-stub-an-external-crate-or-ways-around-it-in-rust
+[dev-dependencies]
+timereport = {path = ".", features = ["mock-open"]}
+
