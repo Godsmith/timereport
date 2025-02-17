@@ -152,3 +152,23 @@ where
 
     deserializer.deserialize_map(HashMapTimeDeltaVisitor)
 }
+
+#[cfg(test)]
+mod test {
+    use std::collections::HashMap;
+
+    use chrono::{NaiveDate, NaiveDateTime, TimeDelta};
+    use rstest::rstest;
+
+    use crate::{day::Day, timedelta::to_hours_and_minutes};
+
+    #[rstest]
+    fn parse_error() {
+        let actual = to_hours_and_minutes("foo");
+
+        assert_eq!(
+            actual,
+            Err("Could not parse timedelta string 'foo'.".to_string())
+        );
+    }
+}

@@ -22,6 +22,13 @@ A small command-line utility for reporting working time and displaying it in dif
 +--------------------+------------+------------+------------+------------+------------+
 ```
 
+## Installation
+
+Timereport stores both configuration and time report data in a file `timereport.json`, by default at `C:\Users\$USER\Dropbox\timereport.json` (`$USERNAME` instead of `$USER` on Windows).
+
+Set the TIMEREPORT_PATH environment variable to where you want to create the .json file 
+containing settings and time report data.
+
 ## Usage
 
 ### General
@@ -106,5 +113,5 @@ cargo test
 ### Running tests with coverage
 
 ```
-cargo llvm-cov --features mock-open [--html]
+cargo llvm-cov [--html]
 ```
