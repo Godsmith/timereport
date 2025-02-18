@@ -4,7 +4,8 @@ use crate::traits::Parsable;
 use chrono::prelude::*;
 use chrono::TimeDelta;
 use std::collections::HashMap;
-use tabled::builder::Builder;
+use tabled::settings::style::HorizontalLine;
+use tabled::{builder::Builder, settings::Style};
 
 pub fn create_terminal_table(
     first_date: NaiveDate,
@@ -23,6 +24,11 @@ pub fn create_terminal_table(
                 show_weekend,
                 project_names,
                 working_time_per_day,
+            )
+            .with(
+                Style::rounded()
+                    .remove_horizontals()
+                    .horizontals([(2, HorizontalLine::inherit(Style::modern()))]),
             )
             .to_string()
         })
