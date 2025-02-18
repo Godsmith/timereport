@@ -1,22 +1,10 @@
 use crate::day::Day;
-#[cfg(feature = "mock-open")]
-use crate::mockopen::open;
 use crate::naive_date::one_date_per_week;
 use crate::traits::Parsable;
-use build_html::Html;
 use chrono::prelude::*;
 use chrono::TimeDelta;
-#[cfg(not(feature = "mock-open"))]
-use open;
 use std::collections::HashMap;
-use std::fs;
-use std::io::Error;
-use std::thread::sleep;
-use std::time;
 use tabled::builder::Builder;
-use tabled::grid::records::vec_records::Cell;
-use tabled::grid::records::Records;
-use tempfile::tempdir;
 
 pub fn create_terminal_table(
     first_date: NaiveDate,
@@ -43,51 +31,8 @@ pub fn create_terminal_table(
 }
 
 /// Currently does not delete the file automatically.
-pub fn create_html_table(
-    first_date: NaiveDate,
-    last_date: NaiveDate,
-    day_from_date: &HashMap<NaiveDate, Day>,
-    show_weekend: bool,
-    project_names: &Vec<String>,
-    working_time_per_day: &TimeDelta,
-) -> Result<(), Error> {
-    let html: String = one_date_per_week(first_date, last_date)
-        .iter()
-        .map(|date| {
-            to_html_table(create_table(
-                *date,
-                &day_from_date,
-                show_weekend,
-                &project_names,
-                working_time_per_day,
-            ))
-            .to_html_string()
-        })
-        .collect();
-    let tmp_dir = tempdir()?;
-    let path = tmp_dir.path().join("tmp.html");
-    fs::write(&path, html)?;
-    open::that(path)?;
-    // Sleep here so that the browser has time to load the file before it
-    // is deleted. Kind of hacky.
-    sleep(time::Duration::from_millis(200));
 
-    Ok(())
-}
-
-fn to_html_table(table: tabled::Table) -> build_html::Table {
-    let mut rows: Vec<Vec<&str>> = vec![];
-    for tabled_row in table.get_records().iter_rows() {
-        let mut html_row: Vec<&str> = vec![];
-        for cell in tabled_row.iter() {
-            html_row.push(cell.text())
-        }
-        rows.push(html_row)
-    }
-    build_html::Table::from(rows)
-}
-
-fn create_table(
+pub fn create_table(
     date_to_display: NaiveDate,
     day_from_date: &HashMap<NaiveDate, Day>,
     show_weekend: bool,

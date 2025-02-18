@@ -155,12 +155,10 @@ where
 
 #[cfg(test)]
 mod test {
-    use std::collections::HashMap;
 
-    use chrono::{NaiveDate, NaiveDateTime, TimeDelta};
     use rstest::rstest;
 
-    use crate::{day::Day, timedelta::to_hours_and_minutes};
+    use crate::timedelta::to_hours_and_minutes;
 
     #[rstest]
     fn parse_error() {

@@ -35,6 +35,16 @@ fn show_week_html_prints_table(temp_dir: TempDir) {
 }
 
 #[rstest]
+fn show_week_html_prints_copy_button(temp_dir: TempDir) {
+    run("show week html", &temp_dir);
+    FILE_CONTENT.with(|content| {
+        let content = content.borrow();
+        assert!(content.contains("<button onclick=\"copyToClipboard("));
+        assert!(content.contains(")\">1. Default project</button>"));
+    })
+}
+
+#[rstest]
 fn show_unknown(temp_dir: TempDir) {
     let output = run("show foo", &temp_dir);
 

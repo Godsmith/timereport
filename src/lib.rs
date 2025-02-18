@@ -17,6 +17,7 @@ mod day;
 #[cfg(feature = "mock-open")]
 pub mod mockopen;
 // Rust note: need to do pub table here since it is used in the binary crate main.rs
+mod html_table;
 pub mod table;
 mod timedelta;
 use day::Day;
@@ -173,7 +174,7 @@ fn create_html_table(
     project_names: &Vec<String>,
     working_time_per_day: &TimeDelta,
 ) -> String {
-    match table::create_html_table(
+    match html_table::create_html_table(
         first_date,
         last_date,
         day_from_date,
