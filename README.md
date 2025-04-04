@@ -133,6 +133,6 @@ cargo llvm-cov [--html]
 
 First working version
 
-### 0.2.5
+### 0.2.6
 
 Add workflow to deploy for Windows
