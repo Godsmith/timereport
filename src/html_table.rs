@@ -61,7 +61,8 @@ pub fn create_html_table(
     open::that(path)?;
     // Sleep here so that the browser has time to load the file before it
     // is deleted. Kind of hacky.
-    sleep(time::Duration::from_millis(200));
+    println!("Opening in browser...");
+    sleep(time::Duration::from_millis(2000));
 
     Ok(())
 }
