@@ -118,3 +118,16 @@ cargo test
 ```
 cargo llvm-cov [--html]
 ```
+
+### Building and publishing to Github
+
+```
+git tag -a 0.2.0
+git push --tags
+```
+
+## Changelog
+
+### 0.2.2
+
+First working version

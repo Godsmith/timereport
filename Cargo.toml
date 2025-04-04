@@ -1,6 +1,6 @@
 [package]
 name = "timereport"
-version = "0.1.0"
+version = "0.2.1"
 edition = "2021"
 description = "A small command-line utility for reporting working time and displaying it in different formats."
 license = "MIT"
@@ -10,7 +10,7 @@ repository = "https://github.com/Godsmith/timereport"
 
 [dependencies]
 build_html = "2.4.0"
-chrono = {version = "0.4.35", features = ["serde", "rustc-serialize"]}
+chrono = {version = "0.4.35", features = ["serde"]}
 open = "5.1.4"
 regex = "1.10.4"
 rstest = "0.19.0"
