@@ -119,15 +119,20 @@ cargo test
 cargo llvm-cov [--html]
 ```
 
-### Building and publishing to Github
+### Publishing to Github and Crates.io
 
-```
-git tag -a 0.2.0
-git push --tags
-```
+1. Update version in Cargo.toml
+2. Add version description to Changelog below
+3. Commit
+4. `git tag x.y.z; git push --tags`
+5. `cargo publish`
 
 ## Changelog
 
 ### 0.2.4
 
 First working version
+
+### 0.2.5
+
+Add workflow to deploy for Windows
