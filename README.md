@@ -128,6 +128,6 @@ git push --tags
 
 ## Changelog
 
-### 0.2.2
+### 0.2.4
 
 First working version
