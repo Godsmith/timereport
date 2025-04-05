@@ -5,9 +5,9 @@ use argparse::consume_two_after_target;
 use chrono::prelude::*;
 use chrono::Duration;
 use chrono::TimeDelta;
+use naive_date::last_day_of_month;
 use std::collections::HashMap;
 mod naive_date;
-use naive_date::last_day_of_month;
 use std::path::Path;
 mod traits;
 use traits::Parsable;
@@ -189,6 +189,7 @@ fn create_html_table(
 
 fn undo(path: &Path) -> String {
     let mut config = config::load(path);
+    let previous_day_from_date = &config.day_from_date();
 
     let date = match config.undo() {
         Ok(date) => date,
@@ -200,6 +201,7 @@ fn undo(path: &Path) -> String {
         date,
         date,
         &config.day_from_date(),
+        previous_day_from_date,
         show_weekend,
         &config.project_names,
         &config.working_time_per_day,
@@ -208,6 +210,8 @@ fn undo(path: &Path) -> String {
 
 fn redo(path: &Path) -> String {
     let mut config = config::load(path);
+    let previous_day_from_date = &config.day_from_date();
+
     let date = match config.redo() {
         Ok(date) => date,
         Err(message) => return message,
@@ -218,6 +222,7 @@ fn redo(path: &Path) -> String {
         date,
         date,
         &config.day_from_date(),
+        previous_day_from_date,
         show_weekend,
         &config.project_names,
         &config.working_time_per_day,
@@ -274,11 +279,14 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
         [first, ..] => first.date,
     };
     let (show_weekend, args_after_show_weekend) = get_show_weekend(&days, args_after_parse_days);
+
+    let previous_day_from_date = &config.day_from_date();
     for day in days {
         if day.has_content() {
             config.add_day(day);
         }
     }
+
     match arg_after_show.as_deref() {
         None => {}
         Some(value) => {
@@ -324,6 +332,7 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
                     first_date,
                     last_date,
                     &config.day_from_date(),
+                    previous_day_from_date,
                     show_weekend,
                     &config.project_names,
                     &config.working_time_per_day,
@@ -342,6 +351,7 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
         date_to_display,
         date_to_display,
         &config.day_from_date(),
+        previous_day_from_date,
         show_weekend,
         &config.project_names,
         &config.working_time_per_day,

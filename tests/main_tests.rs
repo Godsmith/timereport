@@ -36,7 +36,7 @@ fn no_argument_does_not_affect_config_file(temp_dir: TempDir) {
 
 #[rstest]
 fn start(temp_dir: TempDir) {
-    let re = Regex::new(r"start[ |]*08:30").unwrap();
+    let re = Regex::new(r"start.*08:30").unwrap();
     let output = run("2024-06-26 start 8:30", &temp_dir);
 
     assert!(re.is_match(&output))
@@ -44,7 +44,7 @@ fn start(temp_dir: TempDir) {
 
 #[rstest]
 fn stop(temp_dir: TempDir) {
-    let re = Regex::new(r"stop[ |]*08:30").unwrap();
+    let re = Regex::new(r"stop.*08:30").unwrap();
     let output = run("2024-06-26 stop 8:30", &temp_dir);
 
     assert!(re.is_match(&output))
@@ -58,6 +58,12 @@ fn start_8_30_weekend_prints_current_date_and_8_30(temp_dir: TempDir) {
 
     assert!(output.contains(&today));
     assert!(output.contains("08:30"));
+}
+
+#[rstest]
+fn bold_formatting_for_changed_cell(temp_dir: TempDir) {
+    let output = run("2024-06-26 start 8:30", &temp_dir);
+    assert!(output.contains("\x1b[1m08:30"))
 }
 
 #[rstest]

@@ -4,13 +4,18 @@ use crate::traits::Parsable;
 use chrono::prelude::*;
 use chrono::TimeDelta;
 use std::collections::HashMap;
+use tabled::grid::records::vec_records::Cell as _;
+use tabled::settings::object::Cell;
 use tabled::settings::style::HorizontalLine;
+use tabled::settings::themes::Colorization;
+use tabled::settings::Color;
 use tabled::{builder::Builder, settings::Style};
 
 pub fn create_terminal_table(
     first_date: NaiveDate,
     last_date: NaiveDate,
     day_from_date: &HashMap<NaiveDate, Day>,
+    previous_day_from_date: &HashMap<NaiveDate, Day>,
     show_weekend: bool,
     project_names: &Vec<String>,
     working_time_per_day: &TimeDelta,
@@ -18,25 +23,64 @@ pub fn create_terminal_table(
     one_date_per_week(first_date, last_date)
         .iter()
         .map(|date| {
-            create_table(
-                *date,
+            create_terminal_table_string(
+                date,
                 day_from_date,
+                previous_day_from_date,
                 show_weekend,
                 project_names,
                 working_time_per_day,
             )
-            .with(
-                Style::rounded()
-                    .remove_horizontals()
-                    .horizontals([(2, HorizontalLine::inherit(Style::modern()))]),
-            )
-            .to_string()
         })
         .collect::<Vec<_>>()
         .join("\n\n")
 }
 
-/// Currently does not delete the file automatically.
+fn create_terminal_table_string(
+    date_to_display: &NaiveDate,
+    day_from_date: &HashMap<NaiveDate, Day>,
+    previous_day_from_date: &HashMap<NaiveDate, Day>,
+    show_weekend: bool,
+    project_names: &Vec<String>,
+    working_time_per_day: &TimeDelta,
+) -> String {
+    let mut current_table = create_table(
+        *date_to_display,
+        day_from_date,
+        show_weekend,
+        project_names,
+        working_time_per_day,
+    );
+    let previous_table = create_table(
+        *date_to_display,
+        previous_day_from_date,
+        show_weekend,
+        project_names,
+        working_time_per_day,
+    );
+
+    let records1 = current_table.get_records().to_vec();
+    let records2 = previous_table.get_records().iter().collect::<Vec<_>>();
+
+    for (row_idx, (row1, row2)) in records1.iter().zip(records2.iter()).enumerate() {
+        for (col_idx, (cell1, cell2)) in row1.iter().zip(row2.iter()).enumerate() {
+            if cell1.text() != cell2.text() {
+                current_table.with(Colorization::exact(
+                    [Color::BOLD],
+                    Cell::new(row_idx, col_idx),
+                ));
+            }
+        }
+    }
+
+    current_table
+        .with(
+            Style::rounded()
+                .remove_horizontals()
+                .horizontals([(2, HorizontalLine::inherit(Style::modern()))]),
+        )
+        .to_string()
+}
 
 pub fn create_table(
     date_to_display: NaiveDate,

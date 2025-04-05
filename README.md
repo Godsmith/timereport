@@ -136,3 +136,7 @@ First working version
 ### 0.2.8
 
 Add workflow to deploy for Windows
+
+### 0.3.0
+
+Bold formatting for changed cells
