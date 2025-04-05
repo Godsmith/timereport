@@ -188,7 +188,10 @@ fn create_html_table(
 }
 
 fn undo(path: &Path) -> String {
-    let mut config = config::load(path);
+    let mut config = match config::load(path) {
+        Ok(config) => config,
+        Err(message) => return message,
+    };
     let previous_day_from_date = &config.day_from_date();
 
     let date = match config.undo() {
@@ -209,7 +212,10 @@ fn undo(path: &Path) -> String {
 }
 
 fn redo(path: &Path) -> String {
-    let mut config = config::load(path);
+    let mut config = match config::load(path) {
+        Ok(config) => config,
+        Err(message) => return message,
+    };
     let previous_day_from_date = &config.day_from_date();
 
     let date = match config.redo() {
@@ -238,7 +244,10 @@ pub fn get_show_weekend(days: &Vec<Day>, args: Vec<String>) -> (bool, Vec<String
 }
 
 pub fn main(args: Vec<String>, path: &Path) -> String {
-    let mut config = config::load(path);
+    let mut config = match config::load(path) {
+        Ok(config) => config,
+        Err(message) => return message,
+    };
     let (has_undo, args) = consume_bool("undo", args);
     if has_undo {
         return undo(path);

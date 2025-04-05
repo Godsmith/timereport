@@ -76,11 +76,20 @@ impl Config {
     }
 }
 
-pub fn load(path: &Path) -> Config {
+pub fn load(path: &Path) -> Result<Config, String> {
     if fs::metadata(path).is_err() {
         create_empty_config_file(path);
     }
-    let mut file = File::open(path).expect("Failed to open days.json");
+    let mut file = match File::open(path) {
+        Ok(file) => file,
+        Err(error) => {
+            return Err(format!(
+                "Error when trying to access {}: {}",
+                path.to_string_lossy(),
+                error.to_string()
+            ))
+        }
+    };
     let mut contents = String::new();
     file.read_to_string(&mut contents)
         .expect(&format!("Failed to read {}", path.to_string_lossy()));
