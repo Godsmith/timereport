@@ -73,19 +73,17 @@ fn to_html_table(table: tabled::Table) -> build_html::Table {
     let mut table_rows = table.get_records().iter_rows().peekable();
     let mut i = 0;
     while let Some(table_row) = table_rows.next() {
-        let mut html_row: Vec<String> = vec![];
         let row_iter = table_row.iter();
-
         let is_button_row = i >= 5;
-        if table_rows.peek().is_none() {
-            html_row = to_html_row(row_iter, time_to_decimal_string_flex);
+
+        let html_row = if table_rows.peek().is_none() {
+            to_html_row(row_iter, time_to_decimal_string_flex)
         } else if is_button_row {
-            html_row = to_html_row(row_iter, time_to_decimal_string_normal);
+            to_html_row(row_iter, time_to_decimal_string_normal)
         } else {
-            for cell in row_iter {
-                html_row.push(cell.text().to_string())
-            }
-        }
+            row_iter.map(|cell| cell.text().to_string()).collect()
+        };
+
         html_rows.push(html_row);
         i += 1;
     }
@@ -96,7 +94,6 @@ fn to_html_row<F>(mut row_iter: Iter<'_, CellInfo<String>>, time_to_string: F) -
 where
     F: Fn(String) -> String,
 {
-    let mut html_row: Vec<String> = vec![];
     let first_cell = row_iter.next().expect("all rows have at least one cell");
     let cells_except_first: Vec<String> = row_iter
         .clone()
@@ -109,7 +106,7 @@ where
         cells_except_first_with_tab_separators,
         first_cell.text()
     );
-    html_row.push(first_cell_text);
+    let mut html_row: Vec<String> = vec![first_cell_text];
     for string in cells_except_first {
         html_row.push(string)
     }
