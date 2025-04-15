@@ -4,12 +4,13 @@ use crate::mockopen::open;
 use open;
 use std::collections::HashMap;
 use std::io::Error;
+use std::slice::Iter;
 use std::thread::sleep;
 use std::{fs, time};
 
 use build_html::Html;
 use chrono::{NaiveDate, TimeDelta};
-use tabled::grid::records::vec_records::Cell;
+use tabled::grid::records::vec_records::{Cell, CellInfo};
 use tabled::grid::records::Records;
 use tempfile::tempdir;
 
@@ -68,46 +69,68 @@ pub fn create_html_table(
 }
 
 fn to_html_table(table: tabled::Table) -> build_html::Table {
-    let mut rows: Vec<Vec<String>> = vec![];
-    for (i, table_row) in table.get_records().iter_rows().enumerate() {
+    let mut html_rows: Vec<Vec<String>> = vec![];
+    let mut table_rows = table.get_records().iter_rows().peekable();
+    let mut i = 0;
+    while let Some(table_row) = table_rows.next() {
         let mut html_row: Vec<String> = vec![];
-        let mut row_iter = table_row.iter();
+        let row_iter = table_row.iter();
 
         let is_button_row = i >= 5;
-        if is_button_row {
-            let first_cell = row_iter.next().expect("all rows have at least one cell");
-            let cells_except_first: Vec<String> = row_iter
-                .clone()
-                .map(|cell| cell.text().to_string())
-                .map(time_to_decimal_string)
-                .collect();
-            let cells_except_first_with_tab_separators = cells_except_first.join("\t");
-            let first_cell_text = format!(
-                "<button onclick=\"copyToClipboard('{}')\">{}</button>",
-                cells_except_first_with_tab_separators,
-                first_cell.text()
-            );
-            html_row.push(first_cell_text);
-            for string in cells_except_first {
-                html_row.push(string)
-            }
+        if table_rows.peek().is_none() {
+            html_row = to_html_row(row_iter, time_to_decimal_string_flex);
+        } else if is_button_row {
+            html_row = to_html_row(row_iter, time_to_decimal_string_normal);
         } else {
             for cell in row_iter {
                 html_row.push(cell.text().to_string())
             }
         }
-        rows.push(html_row)
+        html_rows.push(html_row);
+        i += 1;
     }
-    build_html::Table::from(rows)
+    build_html::Table::from(html_rows)
 }
 
-fn time_to_decimal_string(time_str: String) -> String {
+fn to_html_row<F>(mut row_iter: Iter<'_, CellInfo<String>>, time_to_string: F) -> Vec<String>
+where
+    F: Fn(String) -> String,
+{
+    let mut html_row: Vec<String> = vec![];
+    let first_cell = row_iter.next().expect("all rows have at least one cell");
+    let cells_except_first: Vec<String> = row_iter
+        .clone()
+        .map(|cell| cell.text().to_string())
+        .map(time_to_string)
+        .collect();
+    let cells_except_first_with_tab_separators = cells_except_first.join("\t");
+    let first_cell_text = format!(
+        "<button onclick=\"copyToClipboard('{}')\">{}</button>",
+        cells_except_first_with_tab_separators,
+        first_cell.text()
+    );
+    html_row.push(first_cell_text);
+    for string in cells_except_first {
+        html_row.push(string)
+    }
+    html_row
+}
+
+fn time_to_decimal_string_normal(time_str: String) -> String {
+    time_to_decimal_string(time_str, false)
+}
+
+fn time_to_decimal_string_flex(time_str: String) -> String {
+    time_to_decimal_string(time_str, true)
+}
+
+fn time_to_decimal_string(time_str: String, flex: bool) -> String {
     // An empty string returns an empty string
     if time_str.is_empty() {
         return String::new();
     }
-
-    let parts: Vec<&str> = time_str.split(':').collect();
+    let is_negative = time_str.starts_with('-');
+    let parts: Vec<&str> = time_str.trim_start_matches('-').split(':').collect();
 
     // Handle format validation
     if parts.len() != 2 {
@@ -129,6 +152,16 @@ fn time_to_decimal_string(time_str: String) -> String {
     };
 
     // Calculate and format the result
-    let decimal = hours as f64 + (minutes as f64 / 60.0);
+    let mut decimal = hours as f64 + (minutes as f64 / 60.0);
+    if is_negative {
+        decimal = -decimal;
+    }
+    if flex {
+        if decimal > 0.0 {
+            return String::new();
+        } else if decimal < 0.0 {
+            decimal = -decimal;
+        }
+    }
     format!("{:.2}", decimal).replace('.', ",")
 }
