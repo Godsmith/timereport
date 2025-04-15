@@ -140,3 +140,7 @@ Add workflow to deploy for Windows
 ### 0.3.0
 
 Bold formatting for changed cells
+
+### 0.3.1
+
+Fix flex display in `show week html`
