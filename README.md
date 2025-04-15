@@ -124,7 +124,7 @@ cargo llvm-cov [--html]
 1. Update version in Cargo.toml
 2. Add version description to Changelog below
 3. Commit
-4. `git tag x.y.z; git push --tags`
+4. `git tag x.y.z; git push; git push --tags`
 5. `cargo publish`
 
 ## Changelog
@@ -144,3 +144,7 @@ Bold formatting for changed cells
 ### 0.3.1
 
 Fix flex display in `show week html`
+
+### 0.3.2
+
+Fix: Prevent command with trailing arguments from writing to yaml file

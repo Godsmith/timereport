@@ -349,13 +349,13 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
             }
         }
     };
-    config.save(path);
     if !args_after_show_weekend.is_empty() {
         return format!(
             "Unknown or extra argument '{}'",
             args_after_show_weekend.join(", ")
         );
     }
+    config.save(path);
     table::create_terminal_table(
         date_to_display,
         date_to_display,

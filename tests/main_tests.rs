@@ -35,6 +35,15 @@ fn no_argument_does_not_affect_config_file(temp_dir: TempDir) {
 }
 
 #[rstest]
+fn partially_correct_command_does_not_affect_config_file(temp_dir: TempDir) {
+    run("", &temp_dir); // To create a config file
+    let config_before = config_contents(&temp_dir);
+    run("start 8 blargh", &temp_dir);
+    let config_after = config_contents(&temp_dir);
+    assert!(config_before == config_after)
+}
+
+#[rstest]
 fn start(temp_dir: TempDir) {
     let re = Regex::new(r"start.*08:30").unwrap();
     let output = run("2024-06-26 start 8:30", &temp_dir);
