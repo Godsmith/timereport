@@ -93,7 +93,10 @@ pub fn load(path: &Path) -> Result<Config, String> {
     let mut contents = String::new();
     file.read_to_string(&mut contents)
         .expect(&format!("Failed to read {}", path.to_string_lossy()));
-    serde_json::from_str(&contents).expect(&format!("Failed to parse {}", path.to_string_lossy()))
+    match serde_json::from_str(&contents) {
+        Ok(config) => Ok(config),
+        Err(_) => Err(format!("Failed to parse {}", path.to_string_lossy())),
+    }
 }
 
 fn create_empty_config_file(path: &Path) {
