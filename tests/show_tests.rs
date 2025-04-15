@@ -45,6 +45,16 @@ fn show_week_html_prints_copy_button(temp_dir: TempDir) {
 }
 
 #[rstest]
+fn show_week_html_prints_needed_flex(temp_dir: TempDir) {
+    run("start 10 stop 17 lunch 0", &temp_dir);
+    run("show week html", &temp_dir);
+    FILE_CONTENT.with(|content| {
+        let content = content.borrow();
+        assert!(content.contains("0,75"));
+    })
+}
+
+#[rstest]
 fn show_unknown(temp_dir: TempDir) {
     let output = run("show foo", &temp_dir);
 
