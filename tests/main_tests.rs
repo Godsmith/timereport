@@ -217,3 +217,10 @@ fn negative_flex(temp_dir: TempDir) {
 
     assert!(output.contains("-01:30"));
 }
+
+#[rstest]
+fn version(temp_dir: TempDir) {
+    let output = run("--version", &temp_dir);
+
+    assert!(output.contains("."));
+}

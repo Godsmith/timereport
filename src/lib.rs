@@ -242,6 +242,9 @@ pub fn get_show_weekend(days: &Vec<Day>, args: Vec<String>) -> (bool, Vec<String
 }
 
 pub fn main(args: Vec<String>, path: &Path, today: NaiveDate) -> String {
+    if args.contains(&"--version".to_string()) {
+        return env!("CARGO_PKG_VERSION").to_string();
+    }
     let mut config = match config::load(path) {
         Ok(config) => config,
         Err(message) => return message,
