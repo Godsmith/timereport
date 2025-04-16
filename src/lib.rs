@@ -37,8 +37,7 @@ const MONTHS: &[&str] = &[
     "december",
 ];
 
-pub fn parse_date(text: &str) -> Result<NaiveDateTime, String> {
-    let today = Local::now();
+pub fn parse_date(text: &str, today: NaiveDate) -> Result<NaiveDateTime, String> {
     let today_string = today.format("%Y-%m-%d").to_string();
     let time_string = if text.contains(":") {
         text.to_string()
@@ -98,12 +97,13 @@ fn parse_days(
     args: Vec<String>,
     project_names: &Vec<String>,
     last: bool,
+    today: NaiveDate,
 ) -> Result<(Vec<Day>, Vec<String>), String> {
     let (start, args) = consume_after_target("start", args);
     let start = match start {
         Ok(option) => match option {
             None => None,
-            Some(text) => match parse_date(&text) {
+            Some(text) => match parse_date(&text, today) {
                 Ok(dt) => Some(dt),
                 Err(e) => return Err(e),
             },
@@ -115,7 +115,7 @@ fn parse_days(
     let stop = match stop {
         Ok(option) => match option {
             None => None,
-            Some(text) => match parse_date(&text) {
+            Some(text) => match parse_date(&text, today) {
                 Ok(dt) => Some(dt),
                 Err(e) => return Err(e),
             },
@@ -135,7 +135,7 @@ fn parse_days(
         Err(error) => return Err(error),
     };
 
-    let (dates, args) = consume_dates(args);
+    let (dates, args) = consume_dates(args, today);
     let (projects, args) = match parse_projects(args, project_names) {
         Ok((projects, args)) => (projects, args),
         Err(message) => return Err(message),
@@ -243,7 +243,7 @@ pub fn get_show_weekend(days: &Vec<Day>, args: Vec<String>) -> (bool, Vec<String
     return (show_weekend | is_day_on_weekend, args);
 }
 
-pub fn main(args: Vec<String>, path: &Path) -> String {
+pub fn main(args: Vec<String>, path: &Path, today: NaiveDate) -> String {
     let mut config = match config::load(path) {
         Ok(config) => config,
         Err(message) => return message,
@@ -278,7 +278,12 @@ pub fn main(args: Vec<String>, path: &Path) -> String {
         Ok(value_after_show) => value_after_show,
     };
 
-    let result = parse_days(args_after_consuming_show, &config.project_names, last);
+    let result = parse_days(
+        args_after_consuming_show,
+        &config.project_names,
+        last,
+        today,
+    );
     let (days, args_after_parse_days) = match result {
         Ok((days, args)) => (days, args),
         Err(message) => return message,

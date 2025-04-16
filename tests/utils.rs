@@ -1,3 +1,4 @@
+use chrono::{Local, NaiveDate};
 use rstest::*;
 use tempfile::{tempdir, TempDir};
 use timereport::main;
@@ -9,6 +10,14 @@ pub fn temp_dir() -> TempDir {
 }
 
 pub fn run(s: &str, temp_dir: &TempDir) -> String {
+    run_mock_date(s, temp_dir, Local::now().date_naive())
+}
+
+pub fn run_mock_date(s: &str, temp_dir: &TempDir, date: NaiveDate) -> String {
     let args: Vec<String> = s.split_whitespace().map(|s| s.to_string()).collect();
-    main(args, &temp_dir.path().join("timereport.json").as_path())
+    main(
+        args,
+        &temp_dir.path().join("timereport.json").as_path(),
+        date,
+    )
 }

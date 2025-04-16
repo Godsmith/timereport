@@ -1,3 +1,4 @@
+use chrono::Local;
 use std::{env, path::PathBuf};
 // Rust note: the binary is a separate crate from the library, so we must import
 // using the full name of the library crate here, not just "crate"
@@ -13,7 +14,7 @@ fn main() {
     };
     // Skip the first argument since it is just the file
     let args: Vec<_> = env::args().skip(1).collect();
-    let output = timereport::main(args, &path);
+    let output = timereport::main(args, &path, Local::now().date_naive());
     println!("{output}")
 }
 

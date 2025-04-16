@@ -43,6 +43,7 @@ Saturdays and Sundays will only be shown if they are affected. To always show th
 $ t 2025-02-08 start 08:30
 $ t monday lunch 45m 
 $ t last monday stop 16:45
+$ t yesterday start 7:00
 ```
 
 If date is omitted, the current date will be used:
@@ -143,5 +144,9 @@ Bold formatting for changed cells
 Fix flex display in `show week html`
 
 ### 0.3.2
+
+Fix: Prevent command with trailing arguments from writing to yaml file
+
+### 0.3.3
 
 Fix: Prevent command with trailing arguments from writing to yaml file

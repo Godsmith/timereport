@@ -1,4 +1,4 @@
-use chrono::{Duration, Local};
+use chrono::{Duration, Local, NaiveDate};
 use regex::Regex;
 use rstest::*;
 use std::fs::File;
@@ -95,6 +95,19 @@ fn lunch_hours_and_minutes(temp_dir: TempDir) {
 #[rstest]
 fn report_weekday(temp_dir: TempDir) {
     let output = run("monday start 8:00", &temp_dir);
+
+    assert!(output.contains("8:00"));
+}
+
+#[rstest]
+fn report_yesterday(temp_dir: TempDir) {
+    let output = run_mock_date(
+        "yesterday start 8:00",
+        &temp_dir,
+        // Need to mock date to ensure that the time
+        // is always displayed in the output
+        NaiveDate::from_ymd_opt(2025, 4, 15).expect(""),
+    );
 
     assert!(output.contains("8:00"));
 }
