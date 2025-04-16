@@ -242,6 +242,24 @@ pub fn get_show_weekend(days: &Vec<Day>, args: Vec<String>) -> (bool, Vec<String
 }
 
 pub fn main(args: Vec<String>, path: &Path, today: NaiveDate) -> String {
+    if args.contains(&"--help".to_string()) {
+        return format!(
+            r#"Timereport {}
+
+Usage:
+  t [{{DATE|[last] WEEKDAY|yesterday}}...] [start TIME] [stop TIME] [lunch TIME]
+  t add PROJECT
+  t project PROJECT TIME
+  t show [last] {{week|month|MONTH}} [html]
+
+Options:
+  --weekend  Show Saturday and Sunday
+  --help     Print help
+  --version  Print version
+"#,
+            env!("CARGO_PKG_VERSION")
+        );
+    }
     if args.contains(&"--version".to_string()) {
         return env!("CARGO_PKG_VERSION").to_string();
     }

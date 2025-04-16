@@ -154,3 +154,7 @@ Support 'yesterday'.
 ### 0.4.0
 
 Fix: Json entries for start and stop needlessly used date, which caused issues.
+
+### 0.4.1
+
+Add --version and --help

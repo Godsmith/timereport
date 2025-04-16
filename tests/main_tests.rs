@@ -224,3 +224,10 @@ fn version(temp_dir: TempDir) {
 
     assert!(output.contains("."));
 }
+
+#[rstest]
+fn help(temp_dir: TempDir) {
+    let output = run("--help", &temp_dir);
+
+    assert!(output.contains("Usage"));
+}
