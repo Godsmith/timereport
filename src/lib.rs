@@ -37,18 +37,16 @@ const MONTHS: &[&str] = &[
     "december",
 ];
 
-pub fn parse_date(text: &str, today: NaiveDate) -> Result<NaiveDateTime, String> {
-    let today_string = today.format("%Y-%m-%d").to_string();
+pub fn parse_time(text: &str) -> Result<NaiveTime, String> {
     let time_string = if text.contains(":") {
         text.to_string()
     } else {
         format!("{text}:00")
     };
-    let datetime_string = format!("{} {}", today_string, time_string);
-    match NaiveDateTime::parse_from_str(&datetime_string, "%Y-%m-%d %H:%M") {
+    match NaiveTime::parse_from_str(&time_string, "%H:%M") {
         Ok(dt) => Ok(dt),
         Err(e) => {
-            Err(format!("Could not parse date string '{}'. Error: '{}'", text, e).to_string())
+            Err(format!("Could not parse time string '{}'. Error: '{}'", text, e).to_string())
         }
     }
 }
@@ -103,7 +101,7 @@ fn parse_days(
     let start = match start {
         Ok(option) => match option {
             None => None,
-            Some(text) => match parse_date(&text, today) {
+            Some(text) => match parse_time(&text) {
                 Ok(dt) => Some(dt),
                 Err(e) => return Err(e),
             },
@@ -115,7 +113,7 @@ fn parse_days(
     let stop = match stop {
         Ok(option) => match option {
             None => None,
-            Some(text) => match parse_date(&text, today) {
+            Some(text) => match parse_time(&text) {
                 Ok(dt) => Some(dt),
                 Err(e) => return Err(e),
             },

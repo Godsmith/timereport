@@ -149,4 +149,8 @@ Fix: Prevent command with trailing arguments from writing to yaml file
 
 ### 0.3.3
 
-Fix: Prevent command with trailing arguments from writing to yaml file
+Support 'yesterday'.
+
+### 0.4.0
+
+Fix: Json entries for start and stop needlessly used date, which caused issues.

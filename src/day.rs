@@ -11,8 +11,8 @@ use std::fmt::Debug;
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Day {
     pub date: NaiveDate,
-    pub start: Option<NaiveDateTime>,
-    pub stop: Option<NaiveDateTime>,
+    pub start: Option<NaiveTime>,
+    pub stop: Option<NaiveTime>,
     #[serde(deserialize_with = "deserialize_option_timedelta")]
     #[serde(serialize_with = "serialize_option_timedelta")]
     pub lunch: Option<TimeDelta>,
@@ -65,7 +65,7 @@ impl Day {
 mod test {
     use std::collections::HashMap;
 
-    use chrono::{NaiveDate, NaiveDateTime, TimeDelta};
+    use chrono::{NaiveDate, NaiveTime, TimeDelta};
     use rstest::rstest;
 
     use crate::day::Day;
@@ -75,14 +75,8 @@ mod test {
         // Create a sample Day instance
         let day = Day {
             date: NaiveDate::from_ymd_opt(2025, 2, 17).expect(""),
-            start: Some(
-                NaiveDateTime::parse_from_str("2025-02-17 08:00:00", "%Y-%m-%d %H:%M:%S")
-                    .expect(""),
-            ),
-            stop: Some(
-                NaiveDateTime::parse_from_str("2025-02-17 17:00:00", "%Y-%m-%d %H:%M:%S")
-                    .expect(""),
-            ),
+            start: Some(NaiveTime::parse_from_str("08:00:00", "%H:%M:%S").expect("")),
+            stop: Some(NaiveTime::parse_from_str("17:00:00", "%H:%M:%S").expect("")),
             lunch: Some(TimeDelta::zero()),
             projects: HashMap::new(),
         };
@@ -91,7 +85,7 @@ mod test {
         let debug_output = format!("{:?}", day);
 
         // Define the expected output string
-        let expected = r#"Day { date: 2025-02-17, start: Some(2025-02-17T08:00:00), stop: Some(2025-02-17T17:00:00), lunch: Some(TimeDelta { secs: 0, nanos: 0 }), projects: {} }"#;
+        let expected = r#"Day { date: 2025-02-17, start: Some(08:00:00), stop: Some(17:00:00), lunch: Some(TimeDelta { secs: 0, nanos: 0 }), projects: {} }"#;
 
         // Assert that the Debug output matches the expected format
         assert_eq!(debug_output, expected);

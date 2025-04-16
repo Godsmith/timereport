@@ -1,6 +1,6 @@
 [package]
 name = "timereport"
-version = "0.3.3"
+version = "0.4.0"
 edition = "2021"
 description = "A small command-line utility for reporting working time and displaying it in different formats."
 license = "MIT"
